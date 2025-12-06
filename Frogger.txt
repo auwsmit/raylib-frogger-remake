@@ -1,0 +1,16 @@
+- fix phone UI scaling+positioning
+- figure out / fix buffered movement input
+- separate cars during init
+- buffered input
+- render resolution scale
+- game UI
+- game logic
+- game sprites
+- menu
+    - move, confirm, and back sounds
+    - sprites/colors
+
+
+- polish: fly (insect) menu select
+
+- post game: port module updates to base project
