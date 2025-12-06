@@ -34,7 +34,7 @@ void InitGameState(ScreenState screen)
     {
         Entity lily = {
             .type = ENTITY_TYPE_LILYPAD,
-            .speed = 150,
+            .speed = 50,
             .radius = SQUARE_SIZE,
             .gridIndex = {
                 GetRandomValue(0, GRID_WIDTH),
@@ -52,7 +52,7 @@ void InitGameState(ScreenState screen)
     Point spawnPoint = { GRID_WIDTH/2, GRID_HEIGHT - 2 };
     Entity frog = {
         .type = ENTITY_TYPE_FROG,
-        .speed = 200,
+        .speed = 250.0f,
         .rect.width = SQUARE_SIZE,
         .rect.height = SQUARE_SIZE,
         .gridIndex = spawnPoint,
@@ -61,6 +61,8 @@ void InitGameState(ScreenState screen)
     Vector2 frogPos = GetGridPosition(frog.gridIndex.x, frog.gridIndex.y);
     frog.rect.x = frogPos.x;
     frog.rect.y = frogPos.y;
+    frog.seekPos = frogPos;
+    frog.bufferPos = frogPos;
     game.entities.frog = frog;
 
     // Cars
@@ -69,7 +71,7 @@ void InitGameState(ScreenState screen)
     {
         Entity car = {
             .type = ENTITY_TYPE_CAR,
-            .speed = 300.0f,
+            .speed = 150.0f,
             .rect.width = SQUARE_SIZE*GetRandomValue(1,2),
             .rect.height = SQUARE_SIZE*1,
             .gridIndex = {
@@ -148,19 +150,25 @@ void UpdateFrog(Entity *frog)
     // has frog stopped
     if (frog->moving && Vector2Equals(frogPos, frog->seekPos))
     {
-        frog->moving = false;
+        // move to possible buffered position
+        if (frog->moveBuffered)
+        {
+            frog->seekPos = frog->bufferPos;
+            frog->moveBuffered = false;
+            frog->moving = true;
+        }
     }
 
     // set movement origin point
-    Vector2 movePos = frogPos;
+    Vector2 movePos = (frog->moving)? frog->seekPos : frogPos;
 
     if (input.player.moveUp)
         movePos.y -= SQUARE_SIZE;
-    if (input.player.moveDown)
+    else if (input.player.moveDown)
         movePos.y += SQUARE_SIZE;
-    if (input.player.moveLeft)
+    else if (input.player.moveLeft)
         movePos.x -= SQUARE_SIZE;
-    if (input.player.moveRight)
+    else if (input.player.moveRight)
         movePos.x += SQUARE_SIZE;
 
     // set frog seek position
@@ -169,14 +177,20 @@ void UpdateFrog(Entity *frog)
         {
             frog->moving = true;
             frog->seekPos = movePos;
+            frog->bufferPos = movePos;
         }
+    }
+    // set buffered position
+    else if (!frog->moveBuffered && !Vector2Equals(frog->bufferPos, movePos))
+    {
+        frog->bufferPos = movePos;
+        frog->moveBuffered = true;
     }
 
     // move frog
     if (frog->moving)
     {
-        Vector2 newPos = Vector2MoveTowards(frogPos, frog->seekPos,
-                                            frog->speed*game.frameTime);
+        Vector2 newPos = Vector2MoveTowards(frogPos, frog->seekPos, frog->speed*game.frameTime);
         frog->rect.x = newPos.x;
         frog->rect.y = newPos.y;
     }

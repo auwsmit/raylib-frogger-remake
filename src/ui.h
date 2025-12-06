@@ -32,8 +32,10 @@
 #define UI_EDGE_PADDING      30  // space from screen edges
 
 // Virtual input
-#define UI_STICK_RADIUS 135.0f
-#define UI_INPUT_RADIUS 75.0f
+#define UI_STICK_RADIUS 70.0f
+#define UI_DPAD_WIDTH   70.0f
+#define UI_INPUT_RADIUS 40.0f
+#define UI_INPUT_PADDING 50.0f
 
 // Types and Structures
 // ----------------------------------------------------------------------------

@@ -48,13 +48,14 @@ typedef struct Entity {
     Rectangle rect;
     Vector2 position;
     Vector2 seekPos;
-    Vector2 nextPos;
+    Vector2 bufferPos;
     Point gridIndex;
     Color color;
     float speed;
     float radius;
     EntityType type;
     bool moving;
+    bool moveBuffered;
 } Entity;
 
 typedef struct GameState {

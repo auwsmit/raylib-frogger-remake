@@ -80,7 +80,6 @@ void UpdateDrawFrame(void)
     // ----------------------------------------------------------------------------
 
     UpdateInputFrame();
-    input.touchMode = false; // TODO fix scaling
 
     // Global input checks
     if (input.global.fullscreen)

@@ -52,10 +52,6 @@ void InitUiState(void)
     CreateUiCheckbox(UiCallbackCheckFullscreen);
     CreateUiMenuButtonRelative("Volume:", 0);
     CreateUiSlider(UiCallbackSetVolume, GetMasterVolume, 0.0f, 1.0f, 0.1f);
-    // CreateUiMenuButtonRelative("Pixel Shader:", UiCallbackToggleShader);
-    // CreateUiCheckbox(UiCallbackCheckShader);
-    // CreateUiMenuButtonRelative("Pixelation:", 0);
-    // CreateUiSlider(UiCallbackSetPixelSize, UiCallbackGetPixelSize, 1.0f, 20.0f, 1.0f);
     CreateUiMenuButtonRelative("Back", UiCallbackGoBack);
 
     // Pause menu
@@ -80,24 +76,22 @@ void InitUiState(void)
 
     // Touch input buttons (virtual gamepad)
     // ----------------------------------------------------------------------------
-    const int touchInputPadding = 160;
-
     // Analog stick
     UiAnalogStick stick = { 0 };
-    stick.centerPos.x = UI_STICK_RADIUS + touchInputPadding;
-    stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - touchInputPadding;
+    stick.centerPos.x = UI_STICK_RADIUS + UI_INPUT_PADDING;
+    stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - UI_INPUT_PADDING;
     stick.stickPos = stick.centerPos;
     stick.centerRadius = UI_STICK_RADIUS;
     stick.stickRadius = UI_STICK_RADIUS/2;
     stick.lastTouchId = -1;
-    stick.enabled = true;
+    stick.enabled = false;
     ui.gamepad.stick = stick;
 
     // D-Pad
     UiDPad dpad = { 0 };
-    dpad.width = 100.0f;
-    dpad.position.x = dpad.width*1.5f + touchInputPadding;
-    dpad.position.y = VIRTUAL_HEIGHT - dpad.width*1.5f - touchInputPadding;
+    dpad.width = UI_DPAD_WIDTH;
+    dpad.position.x = dpad.width*1.5f + UI_INPUT_PADDING;
+    dpad.position.y = VIRTUAL_HEIGHT - dpad.width*1.5f - UI_INPUT_PADDING;
     dpad.button[UI_DPAD_UP] =
         (Rectangle){ dpad.position.x - dpad.width*1.5f,
             dpad.position.y - dpad.width*1.5f,
@@ -121,22 +115,12 @@ void InitUiState(void)
     dpad.inputActionId[UI_DPAD_DOWN] = INPUT_ACTION_DOWN;
     dpad.inputActionId[UI_DPAD_LEFT] = INPUT_ACTION_LEFT;
     dpad.inputActionId[UI_DPAD_RIGHT] = INPUT_ACTION_RIGHT;
-    dpad.enabled = false;
+    dpad.enabled = true;
     ui.gamepad.dpad = dpad;
 
-    // // Thrust button
-    // float flyPosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS - touchInputPadding;
-    // float flyPosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS - touchInputPadding*1.75f;
-    // ui.gamepad.a = InitUiInputButton("Thrust", INPUT_ACTION_THRUST, flyPosX, flyPosY, UI_INPUT_RADIUS);
-
-    // // Shoot button
-    // float shootPosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS - touchInputPadding*2;
-    // float shootPosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS - touchInputPadding;
-    // ui.gamepad.x = InitUiInputButton("Shoot", INPUT_ACTION_SHOOT, shootPosX, shootPosY, UI_INPUT_RADIUS);
-
     // Pause button
-    float pausePosX = VIRTUAL_WIDTH/2;
-    float pausePosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS*0.8f - touchInputPadding;
+    float pausePosX = VIRTUAL_WIDTH/3;
+    float pausePosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS*0.8f - UI_INPUT_PADDING;
     ui.gamepad.pause = InitUiInputButton("Pause", INPUT_ACTION_PAUSE, pausePosX, pausePosY, UI_INPUT_RADIUS*0.8f);
 
     ui.gamepad.stick.textureBase = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_base.png");
@@ -760,10 +744,6 @@ void DrawDebugInfo(void)
     const int textSize = 10;
     int textY = 0;
     DrawText(TextFormat("%i touchCount", input.touchCount), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    DrawText(TextFormat("%i seekPos: %.0f, %.0f", game.entities.frog.seekPos.x, game.entities.frog.seekPos.y), 0, textY, textSize, RAYWHITE);
-    textY += textSize;
-    DrawText(TextFormat("%i nextPos: %f.0, %f.0", game.entities.frog.nextPos.x, game.entities.frog.nextPos.y), 0, textY, textSize, RAYWHITE);
     textY += textSize;
     DrawText(TextFormat("mouse: %3.0f, %3.0f", input.mouse.uiPosition.x, input.mouse.uiPosition.y), 0, textY, textSize, RAYWHITE);
     textY += textSize;
