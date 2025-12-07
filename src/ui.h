@@ -35,7 +35,7 @@
 #define UI_STICK_RADIUS 70.0f
 #define UI_DPAD_WIDTH   70.0f
 #define UI_INPUT_RADIUS 40.0f
-#define UI_INPUT_PADDING 50.0f
+#define UI_INPUT_PADDING 75.0f
 
 // Types and Structures
 // ----------------------------------------------------------------------------
@@ -166,6 +166,7 @@ typedef struct UiState {
     int mouseHoverId;
     bool firstFrame;
     bool lastSelectWithMouse;
+    bool preventMouseClick;
     UiGamepad gamepad; // touchscreen gamepad
 
     // Used during menu creation

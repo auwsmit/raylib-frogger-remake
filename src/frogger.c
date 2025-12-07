@@ -14,6 +14,8 @@ void InitGameState(ScreenState screen)
         .camera.target = (Vector2){ VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2 },
         .camera.offset = (Vector2){ render.renderTexWidth/2, render.renderTexHeight/2 },
         .camera.zoom = render.renderTexHeight/VIRTUAL_HEIGHT,
+
+        .debugMode = DEBUG_DEFAULT
     };
 
     // Set up game grid positions
@@ -56,7 +58,7 @@ void InitGameState(ScreenState screen)
     Point spawnPoint = { GRID_RES_X/2, GRID_RES_Y - 2 };
     Entity frog = {
         .type = ENTITY_TYPE_FROG,
-        .speed = GRID_UNIT*4.5f,
+        .speed = GRID_UNIT*6.0f,
         .rect.width = GRID_UNIT,
         .rect.height = GRID_UNIT,
         .gridIndex = spawnPoint,
@@ -75,12 +77,12 @@ void InitGameState(ScreenState screen)
     {
         Entity car = {
             .type = ENTITY_TYPE_CAR,
-            .speed = GRID_UNIT,
+            .speed = GRID_UNIT*(GetRandomValue(0, 1) * 2 - 1),
             .rect.width = GRID_UNIT*GetRandomValue(1,2),
             .rect.height = GRID_UNIT*1,
             .gridIndex = {
                 GetRandomValue(1, GRID_RES_X - 1),
-                GetRandomValue(10, GRID_RES_Y - 3)
+                GetRandomValue(GRID_RES_Y/2, GRID_RES_Y - 3)
             },
             .color = carColors[i%3],
         };
@@ -206,22 +208,41 @@ void UpdateFrog(Entity *frog)
 
 void UpdateLilypad(Entity *lilypad)
 {
-    if (CheckCollisionPointRec(lilypad->position, game.entities.frog.rect))
+    Vector2 frogCenter = {
+        game.entities.frog.rect.x + game.entities.frog.rect.width/2,
+        game.entities.frog.rect.y + game.entities.frog.rect.height/2
+    };
+    if (CheckCollisionPointCircle(frogCenter, lilypad->position, lilypad->radius))
     {
-        game.entities.frog.rect.x -= lilypad->speed*game.frameTime;
-        game.entities.frog.seekPos.x -= lilypad->speed*game.frameTime;
-        game.entities.frog.bufferPos.x -= lilypad->speed*game.frameTime;
+        game.entities.frog.rect.x += lilypad->speed*game.frameTime;
+        game.entities.frog.seekPos.x += lilypad->speed*game.frameTime;
+        game.entities.frog.bufferPos.x += lilypad->speed*game.frameTime;
     }
 
-    if (lilypad->position.x < game.gridStart.x - lilypad->radius)
+    if ((lilypad->speed > 0) &&
+        (lilypad->position.x > game.gridStart.x + GRID_WIDTH + lilypad->radius))
+    {
+        lilypad->position.x = game.gridStart.x - lilypad->radius;
+    }
+    else if (lilypad->position.x < game.gridStart.x - lilypad->radius)
+    {
         lilypad->position.x = game.gridStart.x + GRID_WIDTH + lilypad->radius;
-    lilypad->position.x -= lilypad->speed*game.frameTime;
+    }
+    lilypad->position.x += lilypad->speed*game.frameTime;
 }
 
 void UpdateCar(Entity *car)
 {
-    if (car->rect.x > game.gridStart.x + GRID_WIDTH)
+    if ((car->speed > 0) &&
+        (car->rect.x > game.gridStart.x + GRID_WIDTH))
+    {
         car->rect.x = game.gridStart.x - car->rect.width;
+    }
+    else if (car->rect.x < game.gridStart.x - car->rect.width)
+    {
+        car->rect.x = game.gridStart.x + GRID_WIDTH;
+    }
+
     car->rect.x += car->speed*game.frameTime;
 }
 
@@ -229,21 +250,7 @@ void DrawGameFrame(void)
 {
     ClearBackground(DARKBLUE);
 
-    DrawEntities();
-
-    // Cover outside of game grid
-    DrawRectangle(-1, 0,
-                  (int)game.gridStart.x + 1,
-                  (int)VIRTUAL_HEIGHT, BLACK);
-
-    DrawRectangle((int)(game.gridStart.x + GRID_WIDTH),
-                  0,
-                  (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH)),
-                  (int)VIRTUAL_HEIGHT, BLACK);
-}
-
-void DrawEntities(void)
-{
+    // Draw entities
     for (int i = 0; i < arrlen(game.entities.lilypads); i++)
     {
         Entity *lily = &game.entities.lilypads[i];
@@ -258,6 +265,16 @@ void DrawEntities(void)
         Entity *car = &game.entities.cars[i];
         DrawRectangleRec(car->rect, car->color);
     }
+
+    // Cover outside of game grid
+    DrawRectangle(-1, 0,
+                  (int)game.gridStart.x + 1,
+                  (int)VIRTUAL_HEIGHT, BLACK);
+
+    DrawRectangle((int)(game.gridStart.x + GRID_WIDTH),
+                  0,
+                  (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH)),
+                  (int)VIRTUAL_HEIGHT, BLACK);
 }
 
 Vector2 GetGridPosition(int col, int row)

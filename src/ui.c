@@ -10,6 +10,7 @@ void InitUiState(void)
     ui = (UiState){
         .camera.target = (Vector2){ VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2 },
         .currentMenu = UI_MENU_TITLE,
+        .preventMouseClick = true,
         .selectedId = 0,
         .mouseHoverId = -1,
         .firstFrame = true,
@@ -52,6 +53,8 @@ void InitUiState(void)
     CreateUiCheckbox(UiCallbackCheckFullscreen);
     CreateUiMenuButtonRelative("Volume:", 0);
     CreateUiSlider(UiCallbackSetVolume, GetMasterVolume, 0.0f, 1.0f, 0.1f);
+    CreateUiMenuButtonRelative("Render scale:", 0);
+    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 0.1f, 4.0f, 0.1f);
     CreateUiMenuButtonRelative("Back", UiCallbackGoBack);
 
     // Pause menu
@@ -119,15 +122,13 @@ void InitUiState(void)
     ui.gamepad.dpad = dpad;
 
     // Pause button
-    float pausePosX = VIRTUAL_WIDTH/3;
-    float pausePosY = VIRTUAL_HEIGHT - UI_INPUT_RADIUS*0.8f - UI_INPUT_PADDING;
+    float pausePosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS*0.8f - UI_INPUT_PADDING;
+    float pausePosY = VIRTUAL_HEIGHT - UI_DPAD_WIDTH - UI_INPUT_PADDING;
     ui.gamepad.pause = InitUiInputButton("Pause", INPUT_ACTION_PAUSE, pausePosX, pausePosY, UI_INPUT_RADIUS*0.8f);
 
     ui.gamepad.stick.textureBase = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_base.png");
     ui.gamepad.stick.textureNub  = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_nub.png");
     ui.gamepad.dpad.texture      = LoadTextureAsset(&ui.assets, "assets/textures/dpad.png");
-    ui.gamepad.a.texture         = LoadTextureAsset(&ui.assets, "assets/textures/button_a.png");
-    ui.gamepad.x.texture         = LoadTextureAsset(&ui.assets, "assets/textures/button_x.png");
     ui.gamepad.pause.texture     = LoadTextureAsset(&ui.assets, "assets/textures/button_pause.png");
 }
 
@@ -390,6 +391,7 @@ void UpdateUiMenuTraverse(void)
     // Move cursor via mouse (also works for first touch point)
     else if (input.mouse.moved || (ui.firstFrame && ui.lastSelectWithMouse))
     {
+
         bool buttonFound = false;
         for (int i = 0; i < arrlen(menu->buttons); i++)
         {
@@ -433,6 +435,11 @@ void UpdateUiMenuTraverse(void)
         }
     }
 
+    // Re-enable mouse click
+    if ((ui.preventMouseClick && (input.touchCount == 0) &&
+         !input.mouse.leftDown && !input.mouse.rightDown))
+        ui.preventMouseClick = false;
+
     // Play sound when new item selected
     bool cursorMoved = (ui.selectedId != (int)prevId);
 
@@ -444,7 +451,7 @@ void UpdateUiMenuTraverse(void)
 
 void UpdateUiButtonSelect(UiButton *button)
 {
-    if (ui.selectedId == -1) return; // nothing selected
+    if (ui.selectedId == -1) return;
 
     // int touchIdx = IsTouchWithinUiButton(button);
     // bool buttonTapped = ((touchIdx != -1) && IsTouchPointTapped(touchIdx));
@@ -467,7 +474,7 @@ void UpdateUiButtonSelect(UiButton *button)
     if (button->slider)
     {
         // Adjust slider with mouse/touch
-        if (input.mouse.leftDown && ui.lastSelectWithMouse)
+        if (!ui.preventMouseClick && input.mouse.leftDown && ui.lastSelectWithMouse)
             UpdateUiSlider(button->slider);
         else
             button->slider->active = false;
@@ -570,6 +577,7 @@ void ChangeUiMenu(UiMenuState newMenu)
     ui.currentMenu = newMenu;
     ui.selectedId = 0;
     ui.firstFrame = true;
+    ui.preventMouseClick = true;
 }
 
 bool IsMouseWithinUiButton(UiButton *button)
@@ -682,7 +690,7 @@ void DrawUiButton(UiButton *button)
     {
         DrawRectangleRec(button->slider->rect, DARKGRAY);
         Rectangle sliderFilled = button->slider->rect;
-        sliderFilled.width = button->slider->getValue()/button->slider->max*button->slider->rect.width;
+        sliderFilled.width = (button->slider->getValue()/button->slider->max)*button->slider->rect.width;
         DrawRectangleRec(sliderFilled, buttonColor);
     }
 
@@ -743,11 +751,16 @@ void DrawUiAnalogStick(UiAnalogStick *stick)
 
 void DrawDebugInfo(void)
 {
-    const int textSize = 10;
-    int textY = 0;
+    DrawFPS(0, 0);
+    const int textSize = 20;
+    int textY = 20;
     DrawText(TextFormat("%i touchCount", input.touchCount), 0, textY, textSize, RAYWHITE);
     textY += textSize;
+    DrawText(TextFormat("%i leftDown, %i rightDown", input.mouse.leftDown, input.mouse.rightDown), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
     DrawText(TextFormat("mouse: %3.0f, %3.0f", input.mouse.uiPosition.x, input.mouse.uiPosition.y), 0, textY, textSize, RAYWHITE);
+    textY += textSize;
+    DrawText(TextFormat("render res: %.0f, %.0f", render.renderTexWidth, render.renderTexHeight), 0, textY, textSize, RAYWHITE);
     textY += textSize;
     if (input.touchCount > 0)
     {

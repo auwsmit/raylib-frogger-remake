@@ -70,6 +70,25 @@ void UiCallbackSetVolume(float setValue, float min, float max)
     }
 }
 
+float UiCallbackGetRenderScale(void)
+{
+    return render.resScale;
+}
+
+void UiCallbackSetRenderScale(float setValue, float min, float max)
+{
+    const float playCooldown = 0.1f;
+    setValue = Clamp(setValue, min, max);
+    if (ui.playbackTimer < EPSILON)
+    {
+        ui.playbackTimer = playCooldown;
+        render.resScale = setValue;
+    }
+    InitRenderTexture();
+    game.camera.offset = (Vector2){ render.renderTexWidth/2, render.renderTexHeight/2 };
+    game.camera.zoom = render.renderTexHeight/VIRTUAL_HEIGHT;
+}
+
 // bool UiCallbackCheckShader(void)
 // {
 //     return render.shaderEnabled;

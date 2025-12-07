@@ -11,7 +11,7 @@
 typedef struct RenderData {
     RenderTexture renderTarget;
     float width, height, scale, x, y,
-          renderTexWidth, renderTexHeight;
+          renderTexWidth, renderTexHeight, resScale;
 
     Shader shader;
     int shaderRenderWidthLoc,  shaderRenderHeightLoc,

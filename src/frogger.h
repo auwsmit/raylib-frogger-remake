@@ -102,7 +102,6 @@ void UpdateFrog(Entity *frog);
 void UpdateLilypad(Entity *lilypad);
 void UpdateCar(Entity *car);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
-void DrawEntities(void);
 
 Vector2 GetGridPosition(int row, int col);
 

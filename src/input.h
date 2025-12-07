@@ -150,12 +150,6 @@ typedef struct InputState {
     InputActionsMenu menu;
     InputActionsPlayer player;
 
-    // generic input data
-    bool anyKeyPressed;
-    bool anyInputPressed;
-    bool cancelled;
-    float cancelTime;
-
     InputMouseState mouse;
 
     InputGamepadState gamepad;
@@ -171,6 +165,13 @@ typedef struct InputState {
     bool touchButtonDown[INPUT_MAX_ACTIONS];
     bool touchButtonPressed[INPUT_MAX_ACTIONS];
     int touchButtonFrameActive[INPUT_MAX_ACTIONS];
+
+    // generic input data
+    bool anyKeyPressed;
+    bool anyInputPressed;
+    bool cancelled;
+    bool mouseCancelled;
+    float cancelTime;
 } InputState;
 
 typedef struct AutoRepeatSettings { // for auto rapid-fire input
@@ -190,6 +191,7 @@ void InitDefaultInputSettings(void); // Sets the default control settings and ma
 void AddInputActionGamepadButton(InputAction action, GamepadButton button);
 void UpdateInputFrame(void);
 void ProcessUserInput(InputPollFlag pollFlag); // Process all user inputs and actions for the current frame
+void CancelMouseInput(void);
 void CancelInputActions(void); // Cancel all user input actions for the current frame
 
 // Input Actions

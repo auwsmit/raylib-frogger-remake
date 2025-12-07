@@ -208,49 +208,60 @@ void ProcessUserInput(InputPollFlag pollType)
     }
 
     // Check input mappings
-    if (input.cancelled && input.anyInputPressed)
-        input.cancelled = false;
 
-    if (!input.cancelled)
+    if (pollType & INPUT_POLL_GLOBAL)
     {
-        if (pollType & INPUT_POLL_GLOBAL)
-        {
-            input.global.fullscreen = IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
-            input.global.debug      = IsInputActionPressed(INPUT_ACTION_DEBUG);
-        }
-
-        if ((pollType & INPUT_POLL_MENU) || (ui.currentMenu != UI_MENU_NONE))
-        {
-            input.menu.confirm   = IsInputActionPressed(INPUT_ACTION_CONFIRM);
-            input.menu.cancel    = IsInputActionPressed(INPUT_ACTION_CANCEL);
-            input.menu.moveUp    = IsInputActionDown(INPUT_ACTION_MENU_UP);
-            input.menu.moveDown  = IsInputActionDown(INPUT_ACTION_MENU_DOWN);
-            input.menu.moveLeft  = IsInputActionDown(INPUT_ACTION_MENU_LEFT);
-            input.menu.moveRight = IsInputActionDown(INPUT_ACTION_MENU_RIGHT);
-        }
-
-        if ((pollType & INPUT_POLL_PLAYER) || (game.currentScreen == SCREEN_GAMEPLAY))
-        {
-            input.player.pause     = IsInputActionPressed(INPUT_ACTION_PAUSE);
-            input.player.moveUp    = IsInputActionPressed(INPUT_ACTION_UP);
-            input.player.moveDown  = IsInputActionPressed(INPUT_ACTION_DOWN);
-            input.player.moveLeft  = IsInputActionPressed(INPUT_ACTION_LEFT);
-            input.player.moveRight = IsInputActionPressed(INPUT_ACTION_RIGHT);
-        }
+        input.global.fullscreen = IsInputActionPressed(INPUT_ACTION_FULLSCREEN);
+        input.global.debug      = IsInputActionPressed(INPUT_ACTION_DEBUG);
     }
+
+    if ((pollType & INPUT_POLL_MENU) || (ui.currentMenu != UI_MENU_NONE))
+    {
+        input.menu.confirm   = IsInputActionPressed(INPUT_ACTION_CONFIRM);
+        input.menu.cancel    = IsInputActionPressed(INPUT_ACTION_CANCEL);
+        input.menu.moveUp    = IsInputActionDown(INPUT_ACTION_MENU_UP);
+        input.menu.moveDown  = IsInputActionDown(INPUT_ACTION_MENU_DOWN);
+        input.menu.moveLeft  = IsInputActionDown(INPUT_ACTION_MENU_LEFT);
+        input.menu.moveRight = IsInputActionDown(INPUT_ACTION_MENU_RIGHT);
+    }
+
+    if ((pollType & INPUT_POLL_PLAYER) || (game.currentScreen == SCREEN_GAMEPLAY))
+    {
+        input.player.pause     = IsInputActionPressed(INPUT_ACTION_PAUSE);
+        input.player.moveUp    = IsInputActionPressed(INPUT_ACTION_UP);
+        input.player.moveDown  = IsInputActionPressed(INPUT_ACTION_DOWN);
+        input.player.moveLeft  = IsInputActionPressed(INPUT_ACTION_LEFT);
+        input.player.moveRight = IsInputActionPressed(INPUT_ACTION_RIGHT);
+    }
+
+    if (input.mouseCancelled || input.mouse.moved)
+        input.mouseCancelled = false;
+    else if (input.mouseCancelled)
+        CancelMouseInput();
+
+    if (input.cancelled && (input.anyKeyPressed || input.anyGamepadButtonPressed))
+        input.cancelled = false;
+    else if (input.cancelled)
+        CancelInputActions();
+}
+
+void CancelMouseInput(void)
+{
+    input.mouse  = (InputMouseState){ 0 };
+    input.mouseCancelled = true;
 }
 
 void CancelInputActions(void)
 {
-    input.global = (InputActionsGlobal){ 0 };
-    input.menu   = (InputActionsMenu){ 0 };
-    input.player = (InputActionsPlayer){ 0 };
+    input.global  = (InputActionsGlobal){ 0 };
+    input.menu    = (InputActionsMenu){ 0 };
+    input.player  = (InputActionsPlayer){ 0 };
+    input.gamepad = (InputGamepadState){ 0 };
     input.anyKeyPressed           = false;
     input.anyGamepadButtonPressed = false;
     input.anyInputPressed         = false;
     input.cancelled = true;
 }
-
 // Input Actions
 // ----------------------------------------------------------------------------
 bool IsInputKeyModifier(KeyboardKey key)
