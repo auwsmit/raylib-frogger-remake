@@ -16,45 +16,49 @@ void InitGameState(ScreenState screen)
         .camera.zoom = render.renderTexHeight/VIRTUAL_HEIGHT,
     };
 
-    // Set up grid positions
-    for (int row = 0; row < GRID_HEIGHT; row++)
+    // Set up game grid positions
+    Vector2 gridOffset = {
+        VIRTUAL_WIDTH/2 - GRID_UNIT*GRID_RES_X/2,
+        VIRTUAL_HEIGHT/2 - GRID_UNIT*GRID_RES_Y/2
+    };
+    for (int row = 0; row < GRID_RES_Y; row++)
     {
-        for (int col = 0; col < GRID_WIDTH; col++)
+        for (int col = 0; col < GRID_RES_X; col++)
         {
-            int index = row*GRID_WIDTH + col;
-            game.grid[index].x = SQUARE_SIZE*col;
-            game.grid[index].y = SQUARE_SIZE*row;
+            int index = row*GRID_RES_X + col;
+            game.grid[index].x = gridOffset.x + GRID_UNIT*col;
+            game.grid[index].y = gridOffset.y + GRID_UNIT*row;
         }
     }
 
     // Create entities
     // ----------------------------------------------------------------------------
     // Lilypads
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
         Entity lily = {
             .type = ENTITY_TYPE_LILYPAD,
-            .speed = 50,
-            .radius = SQUARE_SIZE,
+            .speed = GRID_UNIT*2,
+            .radius = GRID_UNIT*.75f,
             .gridIndex = {
-                GetRandomValue(0, GRID_WIDTH),
-                GetRandomValue(2, GRID_HEIGHT/4)
+                GetRandomValue(0, GRID_RES_X),
+                GetRandomValue(2, GRID_RES_Y/4)
             },
             .color = DARKGREEN,
         };
         Vector2 lilyPosition = GetGridPosition(lily.gridIndex.x, lily.gridIndex.y);
-        lily.position.x = lilyPosition.x + SQUARE_SIZE/2;
-        lily.position.y = lilyPosition.y + SQUARE_SIZE/2;
+        lily.position.x = lilyPosition.x + GRID_UNIT/2;
+        lily.position.y = lilyPosition.y + GRID_UNIT/2;
         arrpush(game.entities.lilypads, lily);
     }
 
     // Frog
-    Point spawnPoint = { GRID_WIDTH/2, GRID_HEIGHT - 2 };
+    Point spawnPoint = { GRID_RES_X/2, GRID_RES_Y - 2 };
     Entity frog = {
         .type = ENTITY_TYPE_FROG,
-        .speed = 250.0f,
-        .rect.width = SQUARE_SIZE,
-        .rect.height = SQUARE_SIZE,
+        .speed = GRID_UNIT*4.5f,
+        .rect.width = GRID_UNIT,
+        .rect.height = GRID_UNIT,
         .gridIndex = spawnPoint,
         .color = GREEN,
     };
@@ -71,12 +75,12 @@ void InitGameState(ScreenState screen)
     {
         Entity car = {
             .type = ENTITY_TYPE_CAR,
-            .speed = 150.0f,
-            .rect.width = SQUARE_SIZE*GetRandomValue(1,2),
-            .rect.height = SQUARE_SIZE*1,
+            .speed = GRID_UNIT,
+            .rect.width = GRID_UNIT*GetRandomValue(1,2),
+            .rect.height = GRID_UNIT*1,
             .gridIndex = {
-                GetRandomValue(1, GRID_WIDTH - 1),
-                GetRandomValue(10, GRID_HEIGHT - 3)
+                GetRandomValue(1, GRID_RES_X - 1),
+                GetRandomValue(10, GRID_RES_Y - 3)
             },
             .color = carColors[i%3],
         };
@@ -97,6 +101,8 @@ void FreeGameState(void)
 
 void UpdateGameFrame(void)
 {
+    game.gridStart = GetGridPosition(0, 0);
+
     // Pause
     if (input.player.pause || (game.paused && input.menu.cancel))
     {
@@ -147,7 +153,7 @@ void UpdateFrog(Entity *frog)
 {
     Vector2 frogPos = { frog->rect.x, frog->rect.y };
 
-    // has frog stopped
+    // check if frog reached destination
     if (frog->moving && Vector2Equals(frogPos, frog->seekPos))
     {
         // move to possible buffered position
@@ -155,36 +161,38 @@ void UpdateFrog(Entity *frog)
         {
             frog->seekPos = frog->bufferPos;
             frog->moveBuffered = false;
-            frog->moving = true;
         }
+        else frog->moving = false;
     }
 
-    // set movement origin point
-    Vector2 movePos = (frog->moving)? frog->seekPos : frogPos;
+    // set movement vector
+    Vector2 moveVector = Vector2Zero();
+    if      (input.player.moveUp)    moveVector.y -= GRID_UNIT;
+    else if (input.player.moveDown)  moveVector.y += GRID_UNIT;
+    else if (input.player.moveLeft)  moveVector.x -= GRID_UNIT;
+    else if (input.player.moveRight) moveVector.x += GRID_UNIT;
 
-    if (input.player.moveUp)
-        movePos.y -= SQUARE_SIZE;
-    else if (input.player.moveDown)
-        movePos.y += SQUARE_SIZE;
-    else if (input.player.moveLeft)
-        movePos.x -= SQUARE_SIZE;
-    else if (input.player.moveRight)
-        movePos.x += SQUARE_SIZE;
+    bool moveInput = (input.player.moveUp   || input.player.moveDown ||
+                      input.player.moveLeft || input.player.moveRight);
 
-    // set frog seek position
-    if (!frog->moving && !Vector2Equals(frogPos, movePos))
+    if (moveInput)
     {
+        Vector2 newSeekPos = Vector2Add(frogPos, moveVector);
+        Vector2 newBufferPos = Vector2Add(frog->seekPos, moveVector);
+
+        // set frog seek position
+        if (!frog->moving)
         {
             frog->moving = true;
-            frog->seekPos = movePos;
-            frog->bufferPos = movePos;
+            frog->seekPos = newSeekPos;
+            frog->bufferPos = newSeekPos;
         }
-    }
-    // set buffered position
-    else if (!frog->moveBuffered && !Vector2Equals(frog->bufferPos, movePos))
-    {
-        frog->bufferPos = movePos;
-        frog->moveBuffered = true;
+        // set buffered position
+        else if (!frog->moveBuffered && !Vector2Equals(frog->bufferPos, newBufferPos))
+        {
+            frog->bufferPos = newBufferPos;
+            frog->moveBuffered = true;
+        }
     }
 
     // move frog
@@ -198,22 +206,40 @@ void UpdateFrog(Entity *frog)
 
 void UpdateLilypad(Entity *lilypad)
 {
-    if (lilypad->position.x < -lilypad->radius)
-        lilypad->position.x = VIRTUAL_WIDTH + lilypad->radius;
+    if (CheckCollisionPointRec(lilypad->position, game.entities.frog.rect))
+    {
+        game.entities.frog.rect.x -= lilypad->speed*game.frameTime;
+        game.entities.frog.seekPos.x -= lilypad->speed*game.frameTime;
+        game.entities.frog.bufferPos.x -= lilypad->speed*game.frameTime;
+    }
+
+    if (lilypad->position.x < game.gridStart.x - lilypad->radius)
+        lilypad->position.x = game.gridStart.x + GRID_WIDTH + lilypad->radius;
     lilypad->position.x -= lilypad->speed*game.frameTime;
 }
 
 void UpdateCar(Entity *car)
 {
-    if (car->rect.x > VIRTUAL_WIDTH)
-        car->rect.x = -car->rect.width;
+    if (car->rect.x > game.gridStart.x + GRID_WIDTH)
+        car->rect.x = game.gridStart.x - car->rect.width;
     car->rect.x += car->speed*game.frameTime;
 }
 
 void DrawGameFrame(void)
 {
     ClearBackground(DARKBLUE);
+
     DrawEntities();
+
+    // Cover outside of game grid
+    DrawRectangle(-1, 0,
+                  (int)game.gridStart.x + 1,
+                  (int)VIRTUAL_HEIGHT, BLACK);
+
+    DrawRectangle((int)(game.gridStart.x + GRID_WIDTH),
+                  0,
+                  (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH)),
+                  (int)VIRTUAL_HEIGHT, BLACK);
 }
 
 void DrawEntities(void)
@@ -236,7 +262,7 @@ void DrawEntities(void)
 
 Vector2 GetGridPosition(int col, int row)
 {
-    int index = row*GRID_WIDTH + col;
+    int index = row*GRID_RES_X + col;
     return (Vector2){ game.grid[index].x, game.grid[index].y };
 }
 

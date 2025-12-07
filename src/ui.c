@@ -355,11 +355,13 @@ void UpdateUiFrame(void)
         UpdateUiButtonSelect(selectedButton);
     }
 
-    // Update pause text fade
+    // Update specific text fade
     if (game.paused)
     {
         UiText *pauseText = &ui.menus[UI_MENU_PAUSE].text[0];
         pauseText->color = Fade(RAYWHITE, ui.textFade);
+        UiText *settingsText = &ui.menus[UI_MENU_SETTINGS].text[0];
+        settingsText->color = Fade(RAYWHITE, ui.textFade);
     }
 }
 
@@ -421,7 +423,7 @@ void UpdateUiMenuTraverse(void)
         if (input.menu.moveUp)
         {
             if (ui.selectedId == -1) ui.selectedId = (int)arrlen(menu->buttons); // up defaults to last menu item
-            ui.selectedId = ((ui.selectedId - 1 + (int)arrlen(menu->buttons)) % arrlen(menu->buttons));
+            ui.selectedId = ((ui.selectedId + (int)arrlen(menu->buttons) - 1) % arrlen(menu->buttons));
             ui.lastSelectWithMouse = false;
         }
         if (input.menu.moveDown)

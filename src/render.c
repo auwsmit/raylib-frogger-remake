@@ -11,8 +11,8 @@ void InitWindowRender(void)
 void InitRenderTexture(void)
 {
     // Render texture, for setting a desired render resolution
-    render.renderTexWidth = (float)GetScreenWidth();
-    render.renderTexHeight = (float)GetScreenHeight();
+    render.renderTexWidth = (float)GetRenderWidth();
+    render.renderTexHeight = (float)GetRenderHeight();
     render.renderTarget = LoadRenderTexture((int)render.renderTexWidth,
                                             (int)render.renderTexHeight);
     SetTextureFilter(render.renderTarget.texture, TEXTURE_FILTER_BILINEAR);
@@ -37,10 +37,13 @@ void InitScreenShader(void)
 // Updates window render info for each frame
 void UpdateWindowRenderFrame(void)
 {
-    render.width = (float)GetRenderWidth();
+    render.width = (float)GetRenderWidth(); // TODO configurable resolution
     render.height = (float)GetRenderHeight();
+
     render.scale = fminf(render.width/render.renderTexWidth, render.height/render.renderTexHeight);
 
+    // int winWidth = GetRenderWidth();
+    // int winHeight = GetRenderWidth();
     int winWidth = (int)render.width;
     int winHeight = (int)render.height;
     float windowAspect = (float)winWidth/(float)winHeight;

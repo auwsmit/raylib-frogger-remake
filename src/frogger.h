@@ -6,9 +6,11 @@
 
 // Macros
 // ----------------------------------------------------------------------------
-#define GRID_HEIGHT 18
-#define GRID_WIDTH 32
-#define SQUARE_SIZE ((float)VIRTUAL_WIDTH/GRID_WIDTH)
+#define GRID_RES_X 14 // playable game grid resolution
+#define GRID_RES_Y 13
+#define GRID_UNIT 50.0f // size of a grid square
+#define GRID_WIDTH GRID_UNIT*GRID_RES_X
+#define GRID_HEIGHT GRID_UNIT*GRID_RES_Y
 
 // Types and Structures
 // ----------------------------------------------------------------------------
@@ -55,6 +57,7 @@ typedef struct Entity {
     float radius;
     EntityType type;
     bool moving;
+    bool moveInput;
     bool moveBuffered;
 } Entity;
 
@@ -80,7 +83,8 @@ typedef struct GameState {
         Entity *lilypads;
         Entity *logs;
     } entities;
-    Vector2 grid[GRID_WIDTH*GRID_HEIGHT];
+    Vector2 grid[GRID_RES_X*GRID_RES_Y];
+    Vector2 gridStart;
 } GameState;
 
 extern GameState game; // global declaration

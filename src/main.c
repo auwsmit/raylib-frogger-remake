@@ -147,15 +147,16 @@ void UpdateDrawFrame(void)
                            (float)render.renderTarget.texture.width,
                            (float)-render.renderTarget.texture.height },
                            (Rectangle){ render.x, render.y,
-                           (float)render.renderTexWidth*render.scale,
-                           (float)render.renderTexHeight*render.scale },
+                           render.width, render.height },
                            Vector2Zero(), 0, WHITE);
 
         if (render.shaderEnabled) EndShaderMode();
 
         // Draw non-shader element overlay (UI and boot logo animation)
-        BeginScissorMode((int)render.x, (int)render.y, // draw within aspect ratio
-                         (int)render.width, (int)render.height);
+        BeginScissorMode((int)render.x,
+                         (int)render.y, // draw within aspect ratio
+                         (int)render.width,
+                         (int)render.height);
         BeginMode2D(ui.camera);
 
             switch(game.currentScreen)
