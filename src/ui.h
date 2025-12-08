@@ -59,11 +59,13 @@ typedef enum UiAlignment {
     UI_ALIGN_DISABLED = 3
 } UiAlignment;
 
-typedef enum UiDPadDirections {
-    UI_DPAD_UP, UI_DPAD_DOWN, UI_DPAD_LEFT, UI_DPAD_RIGHT
-} UiDPadDirections;
-
 typedef enum UiInputTrigger { UI_INPUT_ON_PRESS, UI_INPUT_ON_HOLD } UiInputTrigger;
+
+// Callback functions for interactive elements
+typedef void (*UiActionFunc)(void);
+typedef void (*UiSetFloatFunc)(float setValue, void *slider);
+typedef float (*UiGetFloatFunc)(void);
+typedef bool (*UiGetBoolFunc)(void);
 
 typedef struct UiSounds {
     Sound menu;
@@ -75,11 +77,6 @@ typedef struct UiText {
     int fontSize;
     const char *text;
 } UiText;
-
-typedef void (*UiActionFunc)(void);
-typedef void (*UiSetFloatFunc)(float setValue, float min, float max);
-typedef float (*UiGetFloatFunc)(void);
-typedef bool (*UiGetBoolFunc)(void);
 
 typedef struct UiCheckbox {
     Texture texture;
@@ -136,6 +133,10 @@ typedef struct UiAnalogStick {
     bool active;
     bool enabled;
 } UiAnalogStick;
+
+typedef enum UiDPadDirections {
+    UI_DPAD_UP, UI_DPAD_DOWN, UI_DPAD_LEFT, UI_DPAD_RIGHT
+} UiDPadDirections;
 
 typedef struct UiDPad {
     Texture texture;
@@ -195,13 +196,13 @@ void CreateUiSlider(UiSetFloatFunc setValue, UiGetFloatFunc getValue, float minV
 UiButton *CreateUiMenuButton(char *text, UiActionFunc actionFunc, float x, float y); // Initializes a button within a menu
 void CreateUiMenuButtonRelative(char* text, UiActionFunc actionFunc); // Initializes a button within a menu relative to the last menu button
 void SetUiAlignMode(UiAlignment hAlign, UiAlignment vAlign);
-void FreeUiState(void); // Frees memory for all menu buttons
+// void FreeUiState(void); // Frees memory for all menu buttons
 
 // Update / User Input
 void UpdateUiFrame(void); // Updates the menu for the current frame
 void UpdateUiMenuTraverse(void); // Updates the cursor for movement by user input
 void UpdateUiButtonSelect(UiButton *button); // Selects a button by user input
-void UpdateUiSlider(UiSlider *slider);
+void UpdateUiSliderSelect(UiSlider *slider);
 void ChangeUiMenu(UiMenuState newMenu); // Change from one menu to another
 
 // Touch screen virtual gamepad

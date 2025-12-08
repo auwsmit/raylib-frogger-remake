@@ -1,6 +1,6 @@
 // EXPLANATION:
 // The main entry point for the game/program
-// See header files for more explanations/documentation
+// See header files for overall layout and explanations
 
 #define uint unsigned int
 
@@ -51,20 +51,21 @@ int main(void)
     InitWindowRender();
     InitRaylibLogo();
     InitUiState();
-    InitGameState(SCREEN_LOGO);
+    InitGameState();
     InitDefaultInputSettings();
 
     // Debug exit:
     // SetExitKey(KEY_NULL);
     SetExitKey(KEY_Q);
+    SetMasterVolume(0.15f);
 
     // Start game loop
     PlatformRunGameLoop(UpdateDrawFrame);
 
     // De-Initialization
     // ----------------------------------------------------------------------------
-    FreeGameState();
-    FreeUiState();
+    // FreeGameState();
+    // FreeUiState();
     CloseAudioDevice();
     UnloadShader(render.shader);
     UnloadRenderTexture(render.renderTarget);

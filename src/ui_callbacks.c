@@ -1,6 +1,5 @@
 // EXPLANATION:
-// Callback functions for user interface buttons
-// See the main ui.h file for more info
+// Callback functions for interactive UI elements
 
 // Title
 void UiCallbackStartGame(void)
@@ -43,7 +42,7 @@ void UiCallbackGoToTitle(void)
 
     // Reset game state if returning from gameplay
     if (game.currentScreen == SCREEN_GAMEPLAY)
-        InitGameState(SCREEN_TITLE);
+        InitGameState();
 }
 
 // Settings
@@ -58,10 +57,11 @@ void UiCallbackToggleFullscreen(void)
     input.cancelTime = 0.25f;
 }
 
-void UiCallbackSetVolume(float setValue, float min, float max)
+void UiCallbackSetVolume(float setValue, void *slider)
 {
     const float playCooldown = 0.1f;
-    setValue = Clamp(setValue, min, max);
+    UiSlider *s = (UiSlider*)slider;
+    setValue = Clamp(setValue, s->min, s->max);
     SetMasterVolume(setValue);
     if (ui.playbackTimer < EPSILON)
     {
@@ -75,10 +75,14 @@ float UiCallbackGetRenderScale(void)
     return render.resScale;
 }
 
-void UiCallbackSetRenderScale(float setValue, float min, float max)
+void UiCallbackSetRenderScale(float setValue, void *slider)
 {
     const float playCooldown = 0.1f;
-    setValue = Clamp(setValue, min, max);
+    UiSlider *s = (UiSlider*)slider;
+    setValue = Clamp(setValue, s->min, s->max);
+    setValue = roundf(setValue/s->increment)*s->increment;
+    if (setValue == s->getValue()) return; // don't update if value is unchanged
+
     if (ui.playbackTimer < EPSILON)
     {
         ui.playbackTimer = playCooldown;

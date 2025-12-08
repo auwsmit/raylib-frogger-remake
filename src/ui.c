@@ -54,7 +54,7 @@ void InitUiState(void)
     CreateUiMenuButtonRelative("Volume:", 0);
     CreateUiSlider(UiCallbackSetVolume, GetMasterVolume, 0.0f, 1.0f, 0.1f);
     CreateUiMenuButtonRelative("Render scale:", 0);
-    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 0.1f, 4.0f, 0.1f);
+    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 0.5f, 4.0f, 0.5f);
     CreateUiMenuButtonRelative("Back", UiCallbackGoBack);
 
     // Pause menu
@@ -305,13 +305,13 @@ void SetUiAlignMode(UiAlignment hAlign, UiAlignment vAlign)
 //     ui.vAlign = UI_ALIGN_DISABLED;
 // }
 
-void FreeUiState(void)
-{
-    for (int i = 0; i < UI_MENU_AMOUNT; i++)
-        arrfree(ui.menus[i].buttons);
+// void FreeUiState(void)
+// {
+//     for (int i = 0; i < UI_MENU_AMOUNT; i++)
+//         arrfree(ui.menus[i].buttons);
 
-    FreeRaylibAssets(&ui.assets);
-}
+//     FreeRaylibAssets(&ui.assets);
+// }
 
 // Update / User Input
 // ----------------------------------------------------------------------------
@@ -475,7 +475,7 @@ void UpdateUiButtonSelect(UiButton *button)
     {
         // Adjust slider with mouse/touch
         if (!ui.preventMouseClick && input.mouse.leftDown && ui.lastSelectWithMouse)
-            UpdateUiSlider(button->slider);
+            UpdateUiSliderSelect(button->slider);
         else
             button->slider->active = false;
 
@@ -489,18 +489,22 @@ void UpdateUiButtonSelect(UiButton *button)
                 newValue -= button->slider->increment;
             else if (input.menu.moveRight)
                 newValue += button->slider->increment;
-            button->slider->setValue(newValue, button->slider->min, button->slider->max);
+            button->slider->setValue(newValue, button->slider);
         }
     }
 }
 
-void UpdateUiSlider(UiSlider *slider)
+void UpdateUiSliderSelect(UiSlider *slider)
 {
-    slider->active = true;
-    float newValue = Remap(input.mouse.uiPosition.x,
-                           slider->rect.x, slider->rect.x + slider->rect.width,
-                           slider->min, slider->max);
-    slider->setValue(newValue, slider->min, slider->max);
+    if (input.mouse.leftPressed)
+        slider->active = true;
+    if (slider->active)
+    {
+        float newValue = Remap(input.mouse.uiPosition.x,
+                               slider->rect.x, slider->rect.x + slider->rect.width,
+                               slider->min, slider->max);
+        slider->setValue(newValue, slider);
+    }
 }
 
 // Touch screen virtual gamepad

@@ -93,8 +93,9 @@ extern GameState game; // global declaration
 // ----------------------------------------------------------------------------
 
 // Initialization
-void InitGameState(ScreenState screen); // Initialize game data and allocate memory for sounds
-// void InitNewLevel(int newLevel);
+void InitGameState(void); // Initialize game data and allocate memory for sounds
+void CreateCarRow(int row, char *pattern, float speed, int width);
+// void FreeGameState(void);
 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame

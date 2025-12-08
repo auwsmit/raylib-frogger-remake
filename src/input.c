@@ -121,11 +121,11 @@ void ProcessUserInput(InputPollFlag pollType)
         input.mouse.uiPosition   = GetScreenToWorld2D(mousePos, ui.camera);
         input.mouse.delta        = Vector2Scale(GetMouseDelta(), 1.0f/game.camera.zoom);
         input.mouse.moved        = (Vector2Length(input.mouse.delta) > EPSILON);
-        input.mouse.tapped       = IsGestureDetected(GESTURE_TAP);
         input.mouse.leftPressed  = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
         input.mouse.leftDown     = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
         input.mouse.rightPressed = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
         input.mouse.rightDown    = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
+        input.mouse.pressed      = (input.mouse.leftPressed || input.mouse.rightPressed);
     }
 
     // Detect and update gamepad
@@ -157,7 +157,7 @@ void ProcessUserInput(InputPollFlag pollType)
         else input.anyGamepadButtonPressed = false;
     }
 
-    input.anyInputPressed = (input.mouse.tapped || input.anyGamepadButtonPressed || input.anyKeyPressed);
+    input.anyInputPressed = (input.mouse.pressed || input.anyGamepadButtonPressed || input.anyKeyPressed);
 
     if (pollType & INPUT_POLL_TOUCH)
     {

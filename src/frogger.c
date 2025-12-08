@@ -5,10 +5,10 @@
 // Initialization
 // ----------------------------------------------------------------------------
 
-void InitGameState(ScreenState screen)
+void InitGameState(void)
 {
     game = (GameState){
-        .currentScreen = screen,
+        .currentScreen = SCREEN_LOGO,
 
         // Center camera
         .camera.target = (Vector2){ VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2 },
@@ -93,10 +93,10 @@ void InitGameState(ScreenState screen)
     }
 }
 
-void FreeGameState(void)
-{
-    FreeRaylibAssets(&game.assets);
-}
+// void FreeGameState(void)
+// {
+//     FreeRaylibAssets(&game.assets);
+// }
 
 // Update & Draw
 // ----------------------------------------------------------------------------

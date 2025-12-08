@@ -98,11 +98,11 @@ typedef struct InputMouseState {
     Vector2 uiPosition;
     Vector2 delta;
     bool moved;
-    bool tapped; // works for mouse click or touch point
     bool leftPressed;
     bool leftDown;
     bool rightPressed;
     bool rightDown;
+    bool pressed;
 } InputMouseState;
 
 typedef struct InputGamepadState {
