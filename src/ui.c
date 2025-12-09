@@ -49,13 +49,13 @@ void InitUiState(void)
 
     SetUiAlignMode(UI_ALIGN_CENTER, UI_ALIGN_TOP);
     CreateUiText("SETTINGS", 0, VIRTUAL_HEIGHT*0.15f, UI_TITLE_FONT_SIZE);
-    CreateUiMenuButton("Fullscreen:", UiCallbackToggleFullscreen, 0, VIRTUAL_HEIGHT*0.35f);
+    CreateUiMenuButton("Back", UiCallbackGoBack, 0, VIRTUAL_HEIGHT*0.35f);
+    CreateUiMenuButtonRelative("Fullscreen:", UiCallbackToggleFullscreen);
     CreateUiCheckbox(UiCallbackCheckFullscreen);
     CreateUiMenuButtonRelative("Volume:", 0);
     CreateUiSlider(UiCallbackSetVolume, GetMasterVolume, 0.0f, 1.0f, 0.1f);
     CreateUiMenuButtonRelative("Render scale:", 0);
-    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 0.5f, 4.0f, 0.5f);
-    CreateUiMenuButtonRelative("Back", UiCallbackGoBack);
+    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 1/3.0f, 3.0f, 1/3.0f);
 
     // Pause menu
     // ----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ void InitUiState(void)
 
     SetUiAlignMode(UI_ALIGN_CENTER, UI_ALIGN_TOP);
     CreateUiText("PAUSED", 0, VIRTUAL_HEIGHT*0.15f, UI_TITLE_FONT_SIZE);
-    CreateUiMenuButton("Resume", UiCallbackResume, 0, VIRTUAL_HEIGHT*0.4f);
+    CreateUiMenuButton("Resume", UiCallbackResume, 0, VIRTUAL_HEIGHT*0.35f);
     CreateUiMenuButtonRelative("Settings", UiCallbackSettings);
     CreateUiMenuButtonRelative("Title Screen", UiCallbackGoToTitle);
     if (PLATFORM_CAN_EXIT)

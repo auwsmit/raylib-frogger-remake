@@ -6,11 +6,13 @@
 
 // Macros
 // ----------------------------------------------------------------------------
-#define GRID_RES_X 14 // playable game grid resolution
+#define GRID_RES_X 16 // playable game grid resolution
 #define GRID_RES_Y 13
-#define GRID_UNIT 50.0f // size of a grid square
-#define GRID_WIDTH GRID_UNIT*GRID_RES_X
-#define GRID_HEIGHT GRID_UNIT*GRID_RES_Y
+#define GRID_UNIT 40.0f // size of a grid square
+#define GRID_WIDTH (GRID_UNIT*GRID_RES_X)
+#define GRID_HEIGHT (GRID_UNIT*GRID_RES_Y)
+
+#define BASE_SPEED (GRID_UNIT*1.5f)
 
 // Types and Structures
 // ----------------------------------------------------------------------------
@@ -59,12 +61,15 @@ typedef struct Entity {
     bool moving;
     bool moveInput;
     bool moveBuffered;
+    bool onPlatform;
+    bool dead;
 } Entity;
 
 typedef struct GameState {
     // General game data
-    float frameTime;
+    // ----------------------------------------------------------------------------
     ScreenState currentScreen;
+    float frameTime;
     int frameCount;
     Camera2D camera;
     bool paused;
@@ -74,17 +79,28 @@ typedef struct GameState {
     bool debugMode;
 
     // Frogger data
+    // ----------------------------------------------------------------------------
     RaylibAssets assets;
     // GameSounds sounds;
     // GameTextures textures;
+
+    struct {
+        Rectangle water;
+        Rectangle grassTop, grassBottom;
+        // Rectangle road;
+    } background;
+
     struct {
         Entity frog;
         Entity *cars;
         Entity *lilypads;
         Entity *logs;
     } entities;
+    float deathTimer;
+
     Vector2 grid[GRID_RES_X*GRID_RES_Y];
     Vector2 gridStart;
+    Vector2 spawnPos;
 } GameState;
 
 extern GameState game; // global declaration
@@ -94,16 +110,21 @@ extern GameState game; // global declaration
 
 // Initialization
 void InitGameState(void); // Initialize game data and allocate memory for sounds
+void CreateLilypadRow(int row, char *pattern, float speed);
+void CreateLogRow(int row, char *pattern, float speed, int width);
 void CreateCarRow(int row, char *pattern, float speed, int width);
 // void FreeGameState(void);
 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
 void UpdateFrog(Entity *frog);
-void UpdateLilypad(Entity *lilypad);
-void UpdateCar(Entity *car);
+void UpdateCarCollide(Entity *car);
+void UpdateEntityMove(Entity *e);
+void UpdateEntityPlatform(Entity *p);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
 
 Vector2 GetGridPosition(int row, int col);
+void FrogDead(void);
+void SpawnFrog(void);
 
 #endif // FROGGER_GAME_HEADER_GUARD

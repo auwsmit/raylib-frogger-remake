@@ -13,9 +13,9 @@
 #define UI_TITLE_FONT_SIZE    80
 #define UI_MENU_FONT_SIZE     50
 #define UI_SETTINGS_FONT_SIZE 50
-#define UI_TITLE_BUTTON_WIDTH VIRTUAL_WIDTH*0.25f
-#define UI_PAUSE_BUTTON_WIDTH VIRTUAL_WIDTH*0.4f
-#define UI_SETTINGS_BUTTON_WIDTH VIRTUAL_WIDTH*0.4f
+#define UI_TITLE_BUTTON_WIDTH 300
+#define UI_PAUSE_BUTTON_WIDTH 500
+#define UI_SETTINGS_BUTTON_WIDTH 500
 #define UI_CURSOR_SIZE        30.0f // cursor triangle size
 #define UI_FONT_SIZE_CENTER   140   // center of screen font size
 #define UI_FONT_SIZE_EDGE     75    // top of screen font size
