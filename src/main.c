@@ -98,7 +98,7 @@ void UpdateDrawFrame(void)
     }
 
     // Global updates
-    game.fullscreen = (IsWindowFullscreen() ||
+    game.isFullscreen = (IsWindowFullscreen() ||
                        IsWindowState(FLAG_BORDERLESS_WINDOWED_MODE));
     game.frameTime = GetFrameTime();
     game.frameCount++;

@@ -16,13 +16,13 @@
 #define UI_TITLE_BUTTON_WIDTH 300
 #define UI_PAUSE_BUTTON_WIDTH 500
 #define UI_SETTINGS_BUTTON_WIDTH 500
-#define UI_CURSOR_SIZE        30.0f // cursor triangle size
 #define UI_FONT_SIZE_CENTER   140   // center of screen font size
 #define UI_FONT_SIZE_EDGE     75    // top of screen font size
 #define UI_BORDERED_DEFAULT   true
 #define UI_BORDER_THICKNESS   3
 #define UI_TRANSPARENCY       0.50f
 // UI selection appearance
+#define UI_CURSOR_SIZE        30.0f // cursor triangle size
 #define UI_SELECT_GROWTH_MULT 1.2f
 #define UI_SELECT_COLOR       GREEN
 
@@ -151,7 +151,7 @@ typedef struct UiDPad {
 } UiDPad;
 
 typedef struct UiGamepad { // Virtual touchscreen input
-    UiButton pause, a, x;
+    UiButton pause;
     UiAnalogStick stick;
     UiDPad dpad;
 } UiGamepad;
@@ -176,7 +176,7 @@ typedef struct UiState {
     UiButton *lastButtonCreated;
 
     // Other / optional
-    float playbackTimer;
+    float actionCooldownTimer;
     float textFade; // for fade in and out animation
     float textFadeTimeElapsed;
 } UiState;

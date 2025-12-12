@@ -15,16 +15,16 @@ void UiCallbackSettings(void)
 
 void UiCallbackExit(void)
 {
-    game.gameShouldExit = true;
+    game.shouldExit = true;
 }
 
 // Paused
 void UiCallbackResume(void)
 {
     ChangeUiMenu(UI_MENU_NONE);
-    game.paused = false;
+    game.isPaused = false;
     game.currentScreen = SCREEN_GAMEPLAY;
-    game.resumeInputCooldown = true;
+    game.isInputDisabledFromResume = true;
 }
 
 void UiCallbackGoBack(void)
@@ -48,7 +48,7 @@ void UiCallbackGoToTitle(void)
 // Settings
 bool UiCallbackCheckFullscreen(void)
 {
-    return game.fullscreen;
+    return game.isFullscreen;
 }
 
 void UiCallbackToggleFullscreen(void)
@@ -59,13 +59,13 @@ void UiCallbackToggleFullscreen(void)
 
 void UiCallbackSetVolume(float setValue, void *slider)
 {
-    const float playCooldown = 0.1f;
+    const float cooldownTime = 0.1f;
     UiSlider *s = (UiSlider*)slider;
     setValue = Clamp(setValue, s->min, s->max);
     SetMasterVolume(setValue);
-    if (ui.playbackTimer < EPSILON)
+    if (ui.actionCooldownTimer < EPSILON)
     {
-        ui.playbackTimer = playCooldown;
+        ui.actionCooldownTimer = cooldownTime;
         PlaySound(ui.sounds.menu);
     }
 }
@@ -77,15 +77,15 @@ float UiCallbackGetRenderScale(void)
 
 void UiCallbackSetRenderScale(float setValue, void *slider)
 {
-    const float playCooldown = 0.1f;
+    const float cooldownTime = 0.1f;
     UiSlider *s = (UiSlider*)slider;
     setValue = Clamp(setValue, s->min, s->max);
     setValue = roundf(setValue/s->increment)*s->increment;
     if (setValue == s->getValue()) return; // don't update if value is unchanged
 
-    if (ui.playbackTimer < EPSILON)
+    if (ui.actionCooldownTimer < EPSILON)
     {
-        ui.playbackTimer = playCooldown;
+        ui.actionCooldownTimer = cooldownTime;
         render.resScale = setValue;
     }
     InitRenderTexture();

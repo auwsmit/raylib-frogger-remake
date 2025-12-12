@@ -57,12 +57,15 @@ typedef struct Entity {
     Color color;
     float speed;
     float radius;
+    float platformMove;
     EntityType type;
     bool moving;
     bool moveInput;
     bool moveBuffered;
     bool onPlatform;
     bool dead;
+    bool drowned;
+    bool wrapping;
 } Entity;
 
 typedef struct GameState {
@@ -72,11 +75,11 @@ typedef struct GameState {
     float frameTime;
     int frameCount;
     Camera2D camera;
-    bool paused;
-    bool fullscreen;
-    bool resumeInputCooldown;
-    bool gameShouldExit;
-    bool debugMode;
+    bool isPaused;
+    bool isFullscreen;
+    bool isInputDisabledFromResume;
+    bool shouldExit;
+    bool isDebugMode;
 
     // Frogger data
     // ----------------------------------------------------------------------------
@@ -90,12 +93,8 @@ typedef struct GameState {
         // Rectangle road;
     } background;
 
-    struct {
-        Entity frog;
-        Entity *cars;
-        Entity *lilypads;
-        Entity *logs;
-    } entities;
+    Entity *entities;
+    Entity *frog; // pointer to frog for convenience
     float deathTimer;
 
     Vector2 grid[GRID_RES_X*GRID_RES_Y];
@@ -118,13 +117,14 @@ void CreateCarRow(int row, char *pattern, float speed, int width);
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
 void UpdateFrog(Entity *frog);
-void UpdateCarCollide(Entity *car);
-void UpdateEntityMove(Entity *e);
-void UpdateEntityPlatform(Entity *p);
+void CollideCarFrog(Entity *car);
+void MoveEntity(Entity *e);
+void UpdatePlatform(Entity *p);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
 
 Vector2 GetGridPosition(int row, int col);
-void FrogDead(void);
+void KillFrog(void);
 void SpawnFrog(void);
+void SetFrogPosition(Vector2 position);
 
 #endif // FROGGER_GAME_HEADER_GUARD

@@ -15,7 +15,7 @@ void InitGameState(void)
         .camera.offset = (Vector2){ render.renderTexWidth/2, render.renderTexHeight/2 },
         .camera.zoom = render.renderTexHeight/VIRTUAL_HEIGHT,
 
-        .debugMode = DEBUG_DEFAULT
+        .isDebugMode = DEBUG_DEFAULT
     };
 
     // Set up game grid positions
@@ -40,14 +40,14 @@ void InitGameState(void)
 
     // Logs and Lilies
     int spawnRow = 1;
-    CreateLogRow(spawnRow++,     "OOO..OOO..OOO...",  GRID_UNIT, 3);
+    CreateLogRow(spawnRow++,     "OOOO.OOOO.OOOO..",  GRID_UNIT, 4);
     CreateLilypadRow(spawnRow++, "....OO..OO..OO..", -GRID_UNIT*1.5f);
     CreateLogRow(spawnRow++,     "..OOOOO..OOOOO..",  GRID_UNIT*2, 5);
     CreateLogRow(spawnRow++,     "..OO..OO..OO....",  GRID_UNIT*0.5f, 2);
     CreateLilypadRow(spawnRow++, "OOO.OOO.OOO.OOO.", -GRID_UNIT*1.5f);
 
     // Frog
-    Point spawnPoint = { GRID_RES_X/2, GRID_RES_Y - 1 };
+    Point spawnPoint = { GRID_RES_X/2, 6 };
     Entity frog = {
         .type = ENTITY_TYPE_FROG,
         .speed = BASE_SPEED*5.0f,
@@ -61,7 +61,9 @@ void InitGameState(void)
     frog.position.y += GRID_UNIT/2;
     frog.seekPos = frogPos;
     frog.bufferPos = frogPos;
-    game.entities.frog = frog;
+    // game.entities.frog = frog;
+    arrpush(game.entities, frog);
+    game.frog = &arrlast(game.entities);
     game.spawnPos = frog.position;
 
     // Cars
@@ -112,7 +114,7 @@ void CreateLilypadRow(int row, char *pattern, float speed)
         lily.position.y = lilyPosition.y + GRID_UNIT/2;
         lily.rect.x = lilyPosition.x;
         lily.rect.y = lilyPosition.y;
-        arrpush(game.entities.lilypads, lily);
+        arrpush(game.entities, lily);
     }
 }
 
@@ -136,7 +138,7 @@ void CreateLogRow(int row, char *pattern, float speed, int width)
         Vector2 logPosition = GetGridPosition(log.gridIndex.x, log.gridIndex.y);
         log.rect.x = logPosition.x;
         log.rect.y = logPosition.y;
-        arrpush(game.entities.logs, log);
+        arrpush(game.entities, log);
 
         i += width - 1;
         c += width - 1; // don't make extras when width > 1
@@ -165,7 +167,7 @@ void CreateCarRow(int row, char *pattern, float speed, int width)
         Vector2 carPosition = GetGridPosition(car.gridIndex.x, car.gridIndex.y);
         car.rect.x = carPosition.x;
         car.rect.y = carPosition.y;
-        arrpush(game.entities.cars, car);
+        arrpush(game.entities, car);
 
         i += width - 1;
         c += width - 1; // don't make extras when width > 1
@@ -174,7 +176,7 @@ void CreateCarRow(int row, char *pattern, float speed, int width)
     carColorIdx++;
 }
 
-// void FreeGameState(void)
+// void FreeGameState(void) // TODO: free assets properly
 // {
 //     FreeRaylibAssets(&game.assets);
 // }
@@ -184,60 +186,59 @@ void CreateCarRow(int row, char *pattern, float speed, int width)
 
 void UpdateGameFrame(void)
 {
+    // Debug:
+    if (IsKeyPressed(KEY_K))
+        KillFrog();
+
     // Pause
-    if (input.player.pause || (game.paused && input.menu.cancel))
+    if (input.player.pause || (game.isPaused && input.menu.cancel))
     {
         static float previousTextFade = 0.0f;
-        if (!game.paused)
+        if (!game.isPaused)
         {
-            game.paused = true;
+            game.isPaused = true;
             ChangeUiMenu(UI_MENU_PAUSE);
             previousTextFade = ui.textFade;
             ui.textFade = 1.0f;
         }
         else
         {
-            game.paused = false;
+            game.isPaused = false;
             ui.currentMenu = UI_MENU_NONE;
             ui.textFade = previousTextFade;
         }
         PlaySound(ui.sounds.menu);
     }
 
-    if (!game.paused)
+    if (!game.isPaused)
     {
         // Update entities
-        game.entities.frog.onPlatform = false;
-
-        for (int i = 0; i < arrlen(game.entities.logs); i++)
+        for (int i = 0; i < arrlen(game.entities); i++)
         {
-            Entity *log = &game.entities.logs[i];
-            UpdateEntityPlatform(log);
-            UpdateEntityMove(log);
+            Entity *e = &game.entities[i];
+
+            if (e->type == ENTITY_TYPE_CAR)
+            {
+                CollideCarFrog(e);
+            }
+            if (e->type == ENTITY_TYPE_LILYPAD || e->type == ENTITY_TYPE_LOG)
+            {
+                UpdatePlatform(e);
+                e->position.x = e->rect.x + e->radius; //TEMP
+                e->position.y = e->rect.y + e->radius;
+            }
+            if (e->type != ENTITY_TYPE_FROG)
+            {
+                MoveEntity(e);
+            }
+            if (e->type == ENTITY_TYPE_FROG)
+                UpdateFrog(e);
         }
 
-        for (int i = 0; i < arrlen(game.entities.lilypads); i++)
-        {
-            Entity *lily = &game.entities.lilypads[i];
-            UpdateEntityPlatform(lily);
-            UpdateEntityMove(lily);
-            lily->position.x = lily->rect.x + lily->radius; //TEMP
-            lily->position.y = lily->rect.y + lily->radius;
-        }
-
-        for (int i = 0; i < arrlen(game.entities.cars); i++)
-        {
-            Entity *car = &game.entities.cars[i];
-            UpdateCarCollide(car);
-            UpdateEntityMove(car);
-        }
-
-        Entity *frog = &game.entities.frog;
-        UpdateFrog(frog);
     }
     // Prevent input after resuming pause
-    if (IsMouseButtonUp(MOUSE_LEFT_BUTTON) && game.resumeInputCooldown)
-        game.resumeInputCooldown = false;
+    if (IsMouseButtonUp(MOUSE_LEFT_BUTTON) && game.isInputDisabledFromResume)
+        game.isInputDisabledFromResume = false;
 
     // Update user interface elements and logic
     UpdateUiFrame();
@@ -245,22 +246,62 @@ void UpdateGameFrame(void)
 
 void UpdateFrog(Entity *frog)
 {
+    // track frog to moving platform
+    if (frog->onPlatform)
+    {
+        frog->position.x += frog->platformMove*game.frameTime;
+        frog->seekPos.x += frog->platformMove*game.frameTime;
+        frog->bufferPos.x += frog->platformMove*game.frameTime;
+    }
+
+    // wrap around screen edge
+    bool pastLeftEdge = (frog->position.x + frog->radius < game.gridStart.x);
+    if (pastLeftEdge)
+    {
+        frog->position.x += GRID_WIDTH;
+        frog->seekPos.x += GRID_WIDTH;
+        frog->bufferPos.x += GRID_WIDTH;
+        KillFrog();
+    }
+    bool pastRightEdge = (frog->position.x - frog->radius > game.gridStart.x + GRID_WIDTH);
+    if (pastRightEdge)
+    {
+        frog->position.x -= GRID_WIDTH;
+        frog->seekPos.x -= GRID_WIDTH;
+        frog->bufferPos.x -= GRID_WIDTH;
+        KillFrog();
+    }
+
+    bool onLeftEdge = (frog->position.x - frog->radius < game.gridStart.x);
+    bool onRightEdge = (frog->position.x + frog->radius > game.gridStart.x + GRID_WIDTH);
+    frog->wrapping = onLeftEdge || onRightEdge;
+
+    // respawn frog
     if (frog->dead)
     {
         game.deathTimer -= game.frameTime;
 
         if (game.deathTimer < EPSILON)
-            SpawnFrog();
+        {
+            frog->position = game.spawnPos;
+            frog->seekPos = game.spawnPos;
+            frog->bufferPos= game.spawnPos;
+            frog->dead = false;
+            frog->drowned = false;
+        }
 
         return; // no update
     }
 
+    // frog drowned in river (lethal rapids, I guess?)
     if (!frog->onPlatform &&
         CheckCollisionPointRec(frog->position, game.background.water))
     {
-        FrogDead();
+        KillFrog();
+        frog->drowned = true;
         return;
     }
+    frog->onPlatform = false;
 
     // check if frog reached destination
     if (frog->moving && Vector2Equals(frog->position, frog->seekPos))
@@ -287,6 +328,12 @@ void UpdateFrog(Entity *frog)
         else if (input.player.moveRight) moveVector.x += GRID_UNIT;
 
         Vector2 newSeekPos = Vector2Add(frog->position, moveVector);
+
+        // no moving past screen edge
+        pastLeftEdge = (newSeekPos.x + frog->radius < game.gridStart.x + GRID_UNIT);
+        pastRightEdge = (newSeekPos.x - frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
+        if (pastLeftEdge || pastRightEdge) return;
+
         Vector2 newBufferPos = Vector2Add(frog->seekPos, moveVector);
 
         // set frog seek position
@@ -294,7 +341,7 @@ void UpdateFrog(Entity *frog)
         {
             frog->moving = true;
             frog->seekPos = newSeekPos;
-            frog->bufferPos = newSeekPos;
+            // frog->bufferPos = newSeekPos;
         }
         // set buffered position
         else if (!frog->moveBuffered && !Vector2Equals(frog->bufferPos, newBufferPos))
@@ -304,7 +351,7 @@ void UpdateFrog(Entity *frog)
         }
     }
 
-    // move frog
+    // move frog towards next position
     if (frog->moving)
     {
         Vector2 newPos = Vector2MoveTowards(frog->position, frog->seekPos, frog->speed*game.frameTime);
@@ -312,43 +359,55 @@ void UpdateFrog(Entity *frog)
     }
 }
 
-void UpdateEntityMove(Entity *e)
+void MoveEntity(Entity *e)
 {
-    if ((e->speed > 0) &&
-        (e->rect.x > game.gridStart.x + GRID_WIDTH))
+    // wrap rectangle entities
+    if (e->rect.width > 0)
     {
-        e->rect.x = game.gridStart.x - e->rect.width;
-    }
-    else if (e->rect.x < game.gridStart.x - e->rect.width)
-    {
-        e->rect.x = game.gridStart.x + GRID_WIDTH;
+        bool pastLeftEdge = (e->rect.x + e->rect.width < game.gridStart.x);
+        if (pastLeftEdge) e->rect.x += GRID_WIDTH;
+        bool pastRightEdge = (e->rect.x > game.gridStart.x + GRID_WIDTH);
+        if (pastRightEdge) e->rect.x -= GRID_WIDTH;
+
+        bool onLeftEdge = (e->rect.x < game.gridStart.x);
+        bool onRightEdge = (e->rect.x + e->rect.width > game.gridStart.x + GRID_WIDTH);
+        e->wrapping = onLeftEdge || onRightEdge;
     }
 
     e->rect.x += e->speed*game.frameTime;
 }
 
-void UpdateEntityPlatform(Entity *e)
+void UpdatePlatform(Entity *platform)
 {
     bool colliding = false;
-    if (!game.entities.frog.onPlatform && !game.entities.frog.dead &&
-        (colliding = CheckCollisionPointRec(game.entities.frog.position, e->rect)))
-        game.entities.frog.onPlatform = true;
-
-    if (colliding && game.entities.frog.onPlatform)
+    if (platform->wrapping)
     {
-        game.entities.frog.position.x += e->speed*game.frameTime;
-        game.entities.frog.seekPos.x += e->speed*game.frameTime;
-        game.entities.frog.bufferPos.x += e->speed*game.frameTime;
+        Rectangle platformWrapLeft = platform->rect;
+        platformWrapLeft.x += GRID_WIDTH;
+        Rectangle platformWrapRight = platform->rect;
+        platformWrapRight.x -= GRID_WIDTH;
+        colliding = (CheckCollisionPointRec(game.frog->position, platformWrapLeft) ||
+                     CheckCollisionPointRec(game.frog->position, platformWrapRight));
+    }
+
+    if (!game.frog->onPlatform && !game.frog->drowned &&
+        (colliding |= CheckCollisionPointRec(game.frog->position, platform->rect)))
+    {
+        game.frog->onPlatform = true;
+    }
+
+    if (colliding && game.frog->onPlatform)
+    {
+        game.frog->platformMove = platform->speed;
     }
 }
 
-void UpdateCarCollide(Entity *car)
+void CollideCarFrog(Entity *car)
 {
-    if (!game.entities.frog.dead &&
-        CheckCollisionCircleRec(game.entities.frog.position,
-                                game.entities.frog.radius/2, car->rect))
+    if (!game.frog->dead &&
+        CheckCollisionCircleRec(game.frog->position, game.frog->radius/2, car->rect))
     {
-        FrogDead();
+        KillFrog();
     }
 }
 
@@ -364,47 +423,59 @@ void DrawGameFrame(void)
 
     // Draw entities
     // ----------------------------------------------------------------------------
-    // Logs
-    for (int i = 0; i < arrlen(game.entities.logs); i++)
+    for (int i = 0; i < arrlen(game.entities); i++)
     {
-        Entity *log = &game.entities.logs[i];
-        DrawRectangleRec(log->rect, log->color);
-    }
+        Entity *e = &game.entities[i];
 
-    // Lilypads
-    for (int i = 0; i < arrlen(game.entities.lilypads); i++)
-    {
-        Entity *lily = &game.entities.lilypads[i];
-        DrawCircleV(lily->position, lily->radius, lily->color);
-    }
-
-    // Frog
-    Entity *frog = &game.entities.frog;
-    Color frogColor = (frog->dead)? MAROON : frog->color;
-    DrawCircleV(frog->position, frog->radius, frogColor);
-
-    // Cars
-    for (int i = 0; i < arrlen(game.entities.cars); i++)
-    {
-        Entity *car = &game.entities.cars[i];
-        DrawRectangleRec(car->rect, car->color);
+        if (e->type != ENTITY_TYPE_FROG && e->type != ENTITY_TYPE_LILYPAD)
+        {
+            DrawRectangleRec(e->rect, e->color);
+            if (e->wrapping)
+            {
+                DrawRectangle((int)(e->rect.x + GRID_WIDTH), (int)e->rect.y,
+                              (int)(e->rect.width),          (int)e->rect.height, e->color);
+                DrawRectangle((int)(e->rect.x - GRID_WIDTH), (int)e->rect.y,
+                              (int)(e->rect.width),          (int)e->rect.height, e->color);
+            }
+        }
+        if (e->type == ENTITY_TYPE_LILYPAD)
+        {
+            DrawCircleV(e->position, e->radius, e->color);
+            if (e->wrapping)
+            {
+                DrawCircle((int)(e->position.x + GRID_WIDTH),
+                           (int)e->position.y, e->radius, e->color);
+                DrawCircle((int)(e->position.x - GRID_WIDTH),
+                           (int)e->position.y, e->radius, e->color);
+            }
+        }
+        if (e->type == ENTITY_TYPE_FROG)
+        {
+            Color frogColor = (e->dead)? MAROON : e->color;
+            DrawCircleV(e->position, e->radius, frogColor);
+            if (e->wrapping)
+            {
+                DrawCircle((int)(e->position.x + GRID_WIDTH),
+                           (int)e->position.y, e->radius, frogColor);
+                DrawCircle((int)(e->position.x - GRID_WIDTH),
+                           (int)e->position.y, e->radius, frogColor);
+            }
+        }
     }
 
     // Draw game border (outside of grid)
     // ----------------------------------------------------------------------------
+    // left, right, top, bottom
     DrawRectangle(-1, 0,
-                  (int)game.gridStart.x + 1,
+                  (int)(game.gridStart.x + GRID_UNIT + 1),
                   (int)VIRTUAL_HEIGHT, BLACK);
-
-    DrawRectangle((int)(game.gridStart.x + GRID_WIDTH), 0,
+    DrawRectangle((int)(game.gridStart.x + GRID_WIDTH - GRID_UNIT), 0,
                   (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH)),
                   (int)VIRTUAL_HEIGHT, BLACK);
-
     DrawRectangle((int)game.gridStart.x, 0,
                   (int)VIRTUAL_HEIGHT,
                   (int)(VIRTUAL_HEIGHT - (game.gridStart.y + GRID_HEIGHT)),
                   BLACK);
-
     DrawRectangle((int)game.gridStart.x, (int)(game.gridStart.y + GRID_HEIGHT),
                   (int)VIRTUAL_HEIGHT,
                   (int)(VIRTUAL_HEIGHT - (game.gridStart.y + GRID_HEIGHT)),
@@ -417,16 +488,8 @@ Vector2 GetGridPosition(int col, int row)
     return (Vector2){ game.grid[index].x, game.grid[index].y };
 }
 
-void FrogDead(void)
+void KillFrog(void)
 {
-    game.entities.frog.dead = true;
+    game.frog->dead = true;
     game.deathTimer = 0.5f;
-}
-
-void SpawnFrog(void)
-{
-    game.entities.frog.position = game.spawnPos;
-    game.entities.frog.seekPos = game.spawnPos;
-    game.entities.frog.bufferPos= game.spawnPos;
-    game.entities.frog.dead = false;
 }

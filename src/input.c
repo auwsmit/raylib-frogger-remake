@@ -197,11 +197,9 @@ void ProcessUserInput(InputPollFlag pollType)
 
 
             // Process touch gamepad
-            if (game.paused)
+            if (game.isPaused)
                 SetTouchInputActionDown(INPUT_ACTION_PAUSE, false);
             else UpdateUiTouchInput(&ui.gamepad.pause, UI_INPUT_ON_PRESS);
-            UpdateUiTouchInput(&ui.gamepad.x, UI_INPUT_ON_HOLD);
-            UpdateUiTouchInput(&ui.gamepad.a, UI_INPUT_ON_HOLD);
             if (ui.gamepad.dpad.enabled) UpdateUiDPad(&ui.gamepad.dpad);
             if (ui.gamepad.stick.enabled) UpdateUiAnalogStick(&ui.gamepad.stick);
         }

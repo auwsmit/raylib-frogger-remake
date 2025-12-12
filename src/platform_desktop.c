@@ -19,6 +19,6 @@ void PlatformRunGameLoop(void (*UpdateDrawFrame)(void))
         SetTargetFPS(MAX_FRAMERATE);
 
     // Main game loop
-    while (!WindowShouldClose() && !game.gameShouldExit)
+    while (!WindowShouldClose() && !game.shouldExit)
         UpdateDrawFrame();
 }

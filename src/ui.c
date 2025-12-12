@@ -319,7 +319,7 @@ void SetUiAlignMode(UiAlignment hAlign, UiAlignment vAlign)
 void UpdateUiFrame(void)
 {
     if (input.global.debug)
-        game.debugMode = !game.debugMode;
+        game.isDebugMode = !game.isDebugMode;
 
     // Update text fade animation
     static float fadeLength = 1.5f; // Fade in and out at this rate in seconds
@@ -333,8 +333,8 @@ void UpdateUiFrame(void)
     if (fadingOut)
         fadeIncrement *= -1;
 
-    // Update volume playback timer
-    if (ui.playbackTimer > EPSILON) ui.playbackTimer -= game.frameTime;
+    // Update action cooldown timer
+    if (ui.actionCooldownTimer > EPSILON) ui.actionCooldownTimer -= game.frameTime;
 
     ui.textFade += fadeIncrement;
 
@@ -357,7 +357,7 @@ void UpdateUiFrame(void)
     }
 
     // Update specific text fade
-    if (game.paused)
+    if (game.isPaused)
     {
         UiText *pauseText = &ui.menus[UI_MENU_PAUSE].text[0];
         pauseText->color = Fade(RAYWHITE, ui.textFade);
@@ -461,7 +461,7 @@ void UpdateUiButtonSelect(UiButton *button)
     // Select a menu button
     if (input.menu.confirm || buttonClicked)
     {
-        if (ui.currentMenu == UI_MENU_NONE && !game.paused)
+        if (ui.currentMenu == UI_MENU_NONE && !game.isPaused)
             return; // not a menu
 
         if (button->onClick)
@@ -620,8 +620,6 @@ void DrawUiFrame(void)
     {
         // Touch screen input controls
         DrawUiInputButton(&ui.gamepad.pause);
-        DrawUiInputButton(&ui.gamepad.a);
-        DrawUiInputButton(&ui.gamepad.x);
         if (ui.gamepad.dpad.enabled) DrawUiDPad(&ui.gamepad.dpad);
         if (ui.gamepad.stick.enabled) DrawUiAnalogStick(&ui.gamepad.stick);
     }
@@ -633,7 +631,7 @@ void DrawUiFrame(void)
     }
 
     // Debug info
-    if (game.debugMode) DrawDebugInfo();
+    if (game.isDebugMode) DrawDebugInfo();
 }
 
 void DrawUiButton(UiButton *button)
