@@ -3,7 +3,7 @@
 
 void InitWindowRender(void)
 {
-    render = (RenderData){ .resScale = 1.0f };
+    render = (RenderData){ .resScale = 2.0f }; // default to 4k render texture
     InitRenderTexture();
     InitScreenShader();
 }

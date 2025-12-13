@@ -109,9 +109,12 @@ extern GameState game; // global declaration
 
 // Initialization
 void InitGameState(void); // Initialize game data and allocate memory for sounds
-void CreateLilypadRow(int row, char *pattern, float speed);
-void CreateLogRow(int row, char *pattern, float speed, int width);
-void CreateCarRow(int row, char *pattern, float speed, int width);
+void CreateRow(EntityType type, int row, char *pattern, float speed); // create a row of entities (e.g. logs, cars)
+                                                                      // pattern:
+                                                                      // _ full unit space
+                                                                      // . half unit space
+                                                                      // o half width
+                                                                      // O full width
 // void FreeGameState(void);
 
 // Update & Draw

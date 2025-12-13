@@ -40,14 +40,14 @@ void InitGameState(void)
 
     // Logs and Lilies
     int spawnRow = 1;
-    CreateLogRow(spawnRow++,     "OOOO.OOOO.OOOO..",  GRID_UNIT, 4);
-    CreateLilypadRow(spawnRow++, "....OO..OO..OO..", -GRID_UNIT*1.5f);
-    CreateLogRow(spawnRow++,     "..OOOOO..OOOOO..",  GRID_UNIT*2, 5);
-    CreateLogRow(spawnRow++,     "..OO..OO..OO....",  GRID_UNIT*0.5f, 2);
-    CreateLilypadRow(spawnRow++, "OOO.OOO.OOO.OOO.", -GRID_UNIT*1.5f);
+    CreateRow(ENTITY_TYPE_LOG,     spawnRow++, "_OOOo__OOOo__OOOo", GRID_UNIT);
+    CreateRow(ENTITY_TYPE_LILYPAD, spawnRow++, "___OO_.OO_.OO_.OO",  -GRID_UNIT*1.5f);
+    CreateRow(ENTITY_TYPE_LOG,     spawnRow++, "__OOOOo__.OOOOo",   GRID_UNIT*2);
+    CreateRow(ENTITY_TYPE_LOG,     spawnRow++, "___OOo__.OOo__.OOo",    GRID_UNIT*0.5f);
+    CreateRow(ENTITY_TYPE_LILYPAD, spawnRow++, "_OOO_OOO_OOO_OOO",  -GRID_UNIT*1.5f);
 
     // Frog
-    Point spawnPoint = { GRID_RES_X/2, 6 };
+    Point spawnPoint = { GRID_RES_X/2, 12 };
     Entity frog = {
         .type = ENTITY_TYPE_FROG,
         .speed = BASE_SPEED*5.0f,
@@ -61,18 +61,17 @@ void InitGameState(void)
     frog.position.y += GRID_UNIT/2;
     frog.seekPos = frogPos;
     frog.bufferPos = frogPos;
-    // game.entities.frog = frog;
     arrpush(game.entities, frog);
     game.frog = &arrlast(game.entities);
     game.spawnPos = frog.position;
 
     // Cars
     spawnRow = 7;
-    CreateCarRow(spawnRow++, "....OO...OO.....", -BASE_SPEED,      2);
-    CreateCarRow(spawnRow++, ".O..............",  BASE_SPEED*0.6f, 1);
-    CreateCarRow(spawnRow++, "...O....O....O..", -BASE_SPEED*0.6f, 1);
-    CreateCarRow(spawnRow++, "O.....O...O.....",  BASE_SPEED*0.4f, 1);
-    CreateCarRow(spawnRow++, "..O....O....O...", -BASE_SPEED*0.4f, 1);
+    CreateRow(ENTITY_TYPE_CAR, spawnRow++, "________.OO___.OO", -BASE_SPEED);
+    CreateRow(ENTITY_TYPE_CAR, spawnRow++, "O_______________",  BASE_SPEED*0.6f);
+    CreateRow(ENTITY_TYPE_CAR, spawnRow++, "_______O___O___O",  -BASE_SPEED*0.6f);
+    CreateRow(ENTITY_TYPE_CAR, spawnRow++, "_______O___O___O",  BASE_SPEED*0.4f);
+    CreateRow(ENTITY_TYPE_CAR, spawnRow++, "______O___.O___.O", -BASE_SPEED*0.4f);
 
     // Background rectangles (river, grass, road)
     game.background.water.x = game.gridStart.x;
@@ -91,95 +90,69 @@ void InitGameState(void)
     game.background.grassBottom.height = GRID_UNIT;
 }
 
-void CreateLilypadRow(int row, char *pattern, float speed)
-{
-    int i = 0;
-    char *c = pattern;
-    for (;*c != '\0'; c++, i++)
-    {
-        if (*c == '.') continue;
-
-        Entity lily = {
-            .type = ENTITY_TYPE_LILYPAD,
-            .speed = speed,
-            .radius = GRID_UNIT/2, //TEMP: for drawing circle until sprites
-            .rect.width = GRID_UNIT,
-            .rect.height = GRID_UNIT*1,
-            .gridIndex = { i, row },
-            .color = DARKGREEN,
-        };
-        Vector2 lilyPosition = GetGridPosition(lily.gridIndex.x, lily.gridIndex.y);
-        lily.position = lilyPosition; //TEMP
-        lily.position.x = lilyPosition.x + GRID_UNIT/2;
-        lily.position.y = lilyPosition.y + GRID_UNIT/2;
-        lily.rect.x = lilyPosition.x;
-        lily.rect.y = lilyPosition.y;
-        arrpush(game.entities, lily);
-    }
-}
-
-void CreateLogRow(int row, char *pattern, float speed, int width)
+void CreateRow(EntityType type, int row, char *pattern, float speed)
 {
     Color logColor = ColorBrightness(BROWN, 0.0f - (float)row*0.10f);
-    int i = 0;
-    char *c = pattern;
-    for (;*c != '\0'; c++, i++)
-    {
-        if (*c == '.') continue;
-
-        Entity log = {
-            .type = ENTITY_TYPE_LOG,
-            .speed = speed,
-            .rect.width = GRID_UNIT*width,
-            .rect.height = GRID_UNIT*1,
-            .gridIndex = { i, row },
-            .color = logColor
-        };
-        Vector2 logPosition = GetGridPosition(log.gridIndex.x, log.gridIndex.y);
-        log.rect.x = logPosition.x;
-        log.rect.y = logPosition.y;
-        arrpush(game.entities, log);
-
-        i += width - 1;
-        c += width - 1; // don't make extras when width > 1
-    }
-}
-
-void CreateCarRow(int row, char *pattern, float speed, int width)
-{
     Color carColors[] = { RED, YELLOW, PURPLE, ORANGE, PINK };
     int carColorIdx = row - 7;
+    Vector2 currentPos = GetGridPosition(0, row);
+    float widthExtend = 0;
+    bool isExtending = false;
 
-    int i = 0;
-    char *c = pattern;
-    for (;*c != '\0'; c++, i++)
+    for (char *c = pattern; *c != '\0'; c++)
     {
-        if (*c == '.') continue;
+        if (*c == 'o') widthExtend = GRID_UNIT/2;
+        if (*c == 'O') widthExtend = GRID_UNIT;
+        if (*c == '.') currentPos.x += GRID_UNIT/2;
+        if (*c == '_') currentPos.x += GRID_UNIT;
 
-        Entity car = {
-            .type = ENTITY_TYPE_CAR,
-            .speed = speed,
-            .rect.width = GRID_UNIT*width,
-            .rect.height = GRID_UNIT*1,
-            .gridIndex = { i, row },
-            .color = carColors[carColorIdx],
-        };
-        Vector2 carPosition = GetGridPosition(car.gridIndex.x, car.gridIndex.y);
-        car.rect.x = carPosition.x;
-        car.rect.y = carPosition.y;
-        arrpush(game.entities, car);
+        if (*c == '_' || *c == '.') isExtending = false;
+        if (isExtending)
+        {
+            arrlast(game.entities).rect.width += widthExtend;
+            currentPos.x += widthExtend;
+        }
 
-        i += width - 1;
-        c += width - 1; // don't make extras when width > 1
+        if (*c == '_' || *c == '.' || isExtending)
+            continue;
+
+        Entity e = { 0 };
+        e.type = type;
+        e.speed = speed;
+        e.rect.x = currentPos.x;
+        e.rect.y = currentPos.y;
+        e.rect.width = widthExtend;
+        currentPos.x += widthExtend;
+        e.rect.height = GRID_UNIT;
+
+        isExtending = true;
+        if (type == ENTITY_TYPE_LILYPAD)
+        {
+            e.radius = GRID_UNIT/2; //TEMP: for drawing circle until sprites
+            e.color = DARKGREEN;
+            isExtending = false;
+        }
+
+        if (type == ENTITY_TYPE_LOG)
+        {
+            e.color = logColor;
+        }
+
+        if (type == ENTITY_TYPE_CAR)
+        {
+            e.color = carColors[carColorIdx];
+        }
+
+        arrpush(game.entities, e);
     }
-
-    carColorIdx++;
 }
 
-// void FreeGameState(void) // TODO: free assets properly
+// void FreeGameState(void) // TODO: free assets properly for going back to title
 // {
 //     FreeRaylibAssets(&game.assets);
 // }
+
+char *text = "This is text!";
 
 // Update & Draw
 // ----------------------------------------------------------------------------
@@ -432,10 +405,10 @@ void DrawGameFrame(void)
             DrawRectangleRec(e->rect, e->color);
             if (e->wrapping)
             {
-                DrawRectangle((int)(e->rect.x + GRID_WIDTH), (int)e->rect.y,
-                              (int)(e->rect.width),          (int)e->rect.height, e->color);
-                DrawRectangle((int)(e->rect.x - GRID_WIDTH), (int)e->rect.y,
-                              (int)(e->rect.width),          (int)e->rect.height, e->color);
+                DrawRectangleV((Vector2){ e->rect.x + GRID_WIDTH, e->rect.y },
+                               (Vector2){ e->rect.width, e->rect.height }, e->color);
+                DrawRectangleV((Vector2){ e->rect.x - GRID_WIDTH, e->rect.y },
+                               (Vector2){ e->rect.width, e->rect.height }, e->color);
             }
         }
         if (e->type == ENTITY_TYPE_LILYPAD)
@@ -443,10 +416,10 @@ void DrawGameFrame(void)
             DrawCircleV(e->position, e->radius, e->color);
             if (e->wrapping)
             {
-                DrawCircle((int)(e->position.x + GRID_WIDTH),
-                           (int)e->position.y, e->radius, e->color);
-                DrawCircle((int)(e->position.x - GRID_WIDTH),
-                           (int)e->position.y, e->radius, e->color);
+                DrawCircleV((Vector2){ e->position.x + GRID_WIDTH, e->position.y },
+                            e->radius, e->color);
+                DrawCircleV((Vector2){ e->position.x - GRID_WIDTH, e->position.y },
+                            e->radius, e->color);
             }
         }
         if (e->type == ENTITY_TYPE_FROG)
@@ -470,7 +443,7 @@ void DrawGameFrame(void)
                   (int)(game.gridStart.x + GRID_UNIT + 1),
                   (int)VIRTUAL_HEIGHT, BLACK);
     DrawRectangle((int)(game.gridStart.x + GRID_WIDTH - GRID_UNIT), 0,
-                  (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH)),
+                  (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH) + GRID_UNIT),
                   (int)VIRTUAL_HEIGHT, BLACK);
     DrawRectangle((int)game.gridStart.x, 0,
                   (int)VIRTUAL_HEIGHT,
