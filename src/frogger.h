@@ -7,7 +7,7 @@
 // Macros
 // ----------------------------------------------------------------------------
 #define GRID_RES_X 16 // playable game grid resolution
-#define GRID_RES_Y 13
+#define GRID_RES_Y 14
 #define GRID_UNIT 40.0f // size of a grid square
 #define GRID_WIDTH (GRID_UNIT*GRID_RES_X)
 #define GRID_HEIGHT (GRID_UNIT*GRID_RES_Y)
@@ -17,7 +17,7 @@
 // Types and Structures
 // ----------------------------------------------------------------------------
 
-typedef enum ScreenState {
+typedef enum {
     SCREEN_LOGO, SCREEN_TITLE, SCREEN_GAMEPLAY
 } ScreenState;
 
@@ -29,46 +29,49 @@ typedef enum ScreenState {
 //     Texture ship;
 // } GameTextures;
 
-typedef enum EntityType {
+typedef enum {
     ENTITY_TYPE_FROG,
     ENTITY_TYPE_CAR,
     ENTITY_TYPE_LILYPAD,
     ENTITY_TYPE_LOG,
+    ENTITY_TYPE_WALL,
+    ENTITY_TYPE_WIN,
 } EntityType;
 
-typedef struct Point {
-    int x;
-    int y;
-} Point;
+typedef enum {
+    ENTITY_FLAG_PLATFORM = (1 << 1),
+    ENTITY_FLAG_MOVE = (1 << 2),
+    ENTITY_FLAG_KILL = (1 << 3),
+} EntityFlags;
 
-typedef enum EntityMoveDirection {
+typedef enum {
     ENTITY_MOVE_UP,
     ENTITY_MOVE_DOWN,
     ENTITY_MOVE_LEFT,
     ENTITY_MOVE_RIGHT
 } EntityMoveDirection;
 
-typedef struct Entity {
-    Rectangle rect;
+typedef struct {
+    Rectangle rec;
     Vector2 position;
     Vector2 seekPos;
     Vector2 bufferPos;
-    Point gridIndex;
     Color color;
     float speed;
     float radius;
     float platformMove;
     EntityType type;
-    bool moving;
-    bool moveInput;
-    bool moveBuffered;
-    bool onPlatform;
-    bool dead;
-    bool drowned;
-    bool wrapping;
+    EntityFlags flags;
+    bool isMoving;
+    bool isWrapping;
+    bool isMoveBuffered;
+    bool isOnPlatform;
+    bool isDrowned;
+    bool isDead;
+    bool isWin;
 } Entity;
 
-typedef struct GameState {
+typedef struct {
     // General game data
     // ----------------------------------------------------------------------------
     ScreenState currentScreen;
@@ -87,6 +90,7 @@ typedef struct GameState {
     // GameSounds sounds;
     // GameTextures textures;
 
+    int winCount;
     struct {
         Rectangle water;
         Rectangle grassTop, grassBottom;
@@ -96,6 +100,7 @@ typedef struct GameState {
     Entity *entities;
     Entity *frog; // pointer to frog for convenience
     float deathTimer;
+    float messageTimer;
 
     Vector2 grid[GRID_RES_X*GRID_RES_Y];
     Vector2 gridStart;
@@ -120,14 +125,14 @@ void CreateRow(EntityType type, int row, char *pattern, float speed); // create 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
 void UpdateFrog(Entity *frog);
-void CollideCarFrog(Entity *car);
+void UpdateHostile(Entity *hostile);
+void UpdatePlatform(Entity *platform);
+void UpdateWinZone(Entity *box);
 void MoveEntity(Entity *e);
-void UpdatePlatform(Entity *p);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
 
+// Misc
 Vector2 GetGridPosition(int row, int col);
 void KillFrog(void);
-void SpawnFrog(void);
-void SetFrogPosition(Vector2 position);
 
 #endif // FROGGER_GAME_HEADER_GUARD

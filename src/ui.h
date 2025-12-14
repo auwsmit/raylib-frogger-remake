@@ -80,7 +80,7 @@ typedef struct UiText {
 
 typedef struct UiCheckbox {
     Texture texture;
-    Rectangle rect;
+    Rectangle rec;
     Vector2 position;
     Vector2 growPos;
     float radius;
@@ -89,7 +89,7 @@ typedef struct UiCheckbox {
 
 typedef struct UiSlider {
     Texture texture;
-    Rectangle rect;
+    Rectangle rec;
     float min, max;
     float increment;
     UiSetFloatFunc setValue;
@@ -101,7 +101,7 @@ typedef struct UiButton {
     Texture texture;
     Vector2 position;
     Vector2 growPos;
-    Rectangle rect;
+    Rectangle rec;
     Color color;
     float textureScale;
     float width, height;
@@ -141,7 +141,7 @@ typedef enum UiDPadDirections {
 typedef struct UiDPad {
     Texture texture;
     Rectangle button[4]; // up, down, left, right
-    Rectangle rect; // for drawing dpad sprite
+    Rectangle rec; // for drawing dpad sprite
     Vector2 position;
     float width;
     float textureScale;
@@ -176,6 +176,9 @@ typedef struct UiState {
     UiButton *lastButtonCreated;
 
     // Other / optional
+    UiText timedMessage;
+    int timedMessageLength;
+    float messageTimer;
     float actionCooldownTimer;
     float textFade; // for fade in and out animation
     float textFadeTimeElapsed;
@@ -222,8 +225,10 @@ void DrawUiInputButton(UiButton *button); // Draw touch input button
 void DrawUiDPad(UiDPad *dpad); // Draw touch directional pad
 void DrawUiAnalogStick(UiAnalogStick *stick); // Draw touch analog stick
 void DrawLives(void);
-void DrawCenterText(void); // Draws center text based on game state
-                           // TODO replace with something like SetCenterText(char *text, float time)?
+
 void DrawDebugInfo(void);
+
+// Other
+void SetTimedMessage(char *message, int fontSize, float time);
 
 #endif // FROGGER_UI_HEADER_GUARD

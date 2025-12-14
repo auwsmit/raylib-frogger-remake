@@ -111,7 +111,7 @@ void InitUiState(void)
         (Rectangle){ dpad.position.x + dpad.width*0.5f,
             dpad.position.y - dpad.width*1.5f,
             dpad.width, dpad.width*3 };
-    dpad.rect =
+    dpad.rec =
         (Rectangle){ dpad.button[UI_DPAD_UP].x, dpad.button[UI_DPAD_UP].y,
             dpad.width*3, dpad.width*3 };
     dpad.inputActionId[UI_DPAD_UP] = INPUT_ACTION_UP;
@@ -159,7 +159,7 @@ UiButton InitUiButton(char *text, UiActionFunc actionFunc, float x, float y, flo
         .height = buttonHeight,
         .width = buttonWidth,
         .fontSize = fontSize,
-        .rect = (Rectangle){
+        .rec = (Rectangle){
             x, y - buttonHeight*0.1f,
             buttonWidth, buttonHeight
         },
@@ -210,10 +210,10 @@ void CreateUiMenuButtonRelative(char* text, UiActionFunc actionFunc)
     if (ui.hAlign == UI_ALIGN_DISABLED)
     {
         int textLength = MeasureText(text, menu->fontSize);
-        button->rect.x = originButton->rect.x;
-        button->position.x = button->rect.x + button->width/2 - textLength/2;
+        button->rec.x = originButton->rec.x;
+        button->position.x = button->rec.x + button->width/2 - textLength/2;
     }
-    button->rect.y = originButton->rect.y + originButton->height + menu->spacing;
+    button->rec.y = originButton->rec.y + originButton->height + menu->spacing;
     button->position.y = originButton->position.y + originButton->height + menu->spacing;
     button->growPos.y = originButton->growPos.y + originButton->height + menu->spacing;
 }
@@ -250,19 +250,19 @@ void CreateUiCheckbox(UiGetBoolFunc getValue)
     newCheckbox.position =
         (Vector2){
             button->position.x + textLength + radius + 25,
-            button->rect.y + button->height/2,
+            button->rec.y + button->height/2,
         };
     newCheckbox.growPos =
         (Vector2){
             button->growPos.x + growLength + radius + 25,
-            button->rect.y + button->height/2,
+            button->rec.y + button->height/2,
         };
 
     // reposition rect if necessary
     if (ui.menus[ui.initMenu].buttonWidth == 0)
     {
-        button->rect.width += radius*2 + 25;
-        button->rect.x -= radius*0.75f + 25;
+        button->rec.width += radius*2 + 25;
+        button->rec.x -= radius*0.75f + 25;
     }
 
     button->checkbox = malloc(sizeof(UiCheckbox));
@@ -274,9 +274,9 @@ void CreateUiSlider(UiSetFloatFunc setValue, UiGetFloatFunc getValue, float minV
     UiButton *button = ui.lastButtonCreated;
 
     UiSlider newSlider = {
-        .rect = (Rectangle){
-            button->rect.x + UI_BORDER_THICKNESS*3,
-            button->rect.y + button->height,
+        .rec = (Rectangle){
+            button->rec.x + UI_BORDER_THICKNESS*3,
+            button->rec.y + button->height,
             button->width - UI_BORDER_THICKNESS*6, button->height/2 - UI_BORDER_THICKNESS*3
         },
         .min = minValue, .max = maxValue,
@@ -286,7 +286,7 @@ void CreateUiSlider(UiSetFloatFunc setValue, UiGetFloatFunc getValue, float minV
     };
 
     // resize button
-    button->rect.height += button->height/2;
+    button->rec.height += button->height/2;
     button->height += button->height/2;
 
     button->slider = malloc(sizeof(UiSlider));
@@ -333,7 +333,7 @@ void UpdateUiFrame(void)
     if (fadingOut)
         fadeIncrement *= -1;
 
-    // Update action cooldown timer
+    // Update timers
     if (ui.actionCooldownTimer > EPSILON) ui.actionCooldownTimer -= game.frameTime;
 
     ui.textFade += fadeIncrement;
@@ -364,6 +364,9 @@ void UpdateUiFrame(void)
         UiText *settingsText = &ui.menus[UI_MENU_SETTINGS].text[0];
         settingsText->color = Fade(RAYWHITE, ui.textFade);
     }
+    // Update message timer when unpaused
+    else if (ui.messageTimer > EPSILON) ui.messageTimer -= game.frameTime;
+
 }
 
 void UpdateUiMenuTraverse(void)
@@ -501,7 +504,7 @@ void UpdateUiSliderSelect(UiSlider *slider)
     if (slider->active)
     {
         float newValue = Remap(input.mouse.uiPosition.x,
-                               slider->rect.x, slider->rect.x + slider->rect.width,
+                               slider->rec.x, slider->rec.x + slider->rec.width,
                                slider->min, slider->max);
         slider->setValue(newValue, slider);
     }
@@ -588,12 +591,12 @@ bool IsMouseWithinUiButton(UiButton *button)
 {
     Vector2 mousePos = input.mouse.uiPosition;
 
-    return CheckCollisionPointRec(mousePos, button->rect);
+    return CheckCollisionPointRec(mousePos, button->rec);
 }
 
 int IsTouchWithinUiButton(UiButton *button)
 {
-    return CheckCollisionTouchRec(button->rect);
+    return CheckCollisionTouchRec(button->rec);
 }
 
 // Draw
@@ -628,6 +631,9 @@ void DrawUiFrame(void)
     // ----------------------------------------------------------------------------
     if (game.currentScreen == SCREEN_GAMEPLAY)
     {
+        if (!game.isPaused && ui.messageTimer > 0)
+            DrawText(ui.timedMessage.text, (int)ui.timedMessage.position.x, (int)ui.timedMessage.position.y,
+                     ui.timedMessage.fontSize, ui.timedMessage.color);
     }
 
     // Debug info
@@ -654,8 +660,8 @@ void DrawUiButton(UiButton *button)
         if (selectionStyleFlags & UI_SELSTYLE_HL_RECT) outlineColor = UI_SELECT_COLOR;
         if (selectionStyleFlags & UI_SELSTYLE_HL_TEXT) buttonColor = UI_SELECT_COLOR;
         if (selectionStyleFlags & UI_SELSTYLE_UNDERLINE)
-            DrawLineEx((Vector2){ button->rect.x, button->rect.y + button->height },
-                       (Vector2){ button->rect.x + button->width, button->rect.y + button->height },
+            DrawLineEx((Vector2){ button->rec.x, button->rec.y + button->height },
+                       (Vector2){ button->rec.x + button->width, button->rec.y + button->height },
                        8, buttonColor);
         if (selectionStyleFlags & UI_SELSTYLE_GROW)
         {
@@ -675,14 +681,14 @@ void DrawUiButton(UiButton *button)
         else
             boxColor = ColorAlpha(boxColor, UI_TRANSPARENCY);
         // box around text
-        DrawRectangleRec(button->rect, boxColor);
+        DrawRectangleRec(button->rec, boxColor);
         // outline box
-        DrawRectangleLinesEx(button->rect, (float)outlineWidth, outlineColor);
+        DrawRectangleLinesEx(button->rec, (float)outlineWidth, outlineColor);
     }
 
     if (button->checkbox)
     {
-        // DrawRectangleRec(button->checkbox->rect, RAYWHITE);
+        // DrawRectangleRec(button->checkbox->rec, RAYWHITE);
         DrawCircleV(checkboxPos, button->checkbox->radius, DARKGRAY);
         if (button->checkbox->getValue())
             DrawCircleV(checkboxPos, button->checkbox->radius/2, buttonColor);
@@ -690,9 +696,9 @@ void DrawUiButton(UiButton *button)
 
     if (button->slider)
     {
-        DrawRectangleRec(button->slider->rect, DARKGRAY);
-        Rectangle sliderFilled = button->slider->rect;
-        sliderFilled.width = (button->slider->getValue()/button->slider->max)*button->slider->rect.width;
+        DrawRectangleRec(button->slider->rec, DARKGRAY);
+        Rectangle sliderFilled = button->slider->rec;
+        sliderFilled.width = (button->slider->getValue()/button->slider->max)*button->slider->rec.width;
         DrawRectangleRec(sliderFilled, buttonColor);
     }
 
@@ -706,7 +712,7 @@ void DrawUiCursor(UiButton *selectedButton)
 
     Vector2 selectPointPos; // the corner/vertice pointing towards the right
     Vector2 cursorOffset = (Vector2){ -50.0f, (float)selectedButton->fontSize/2 };
-    Vector2 buttonPos = (Vector2){ selectedButton->rect.x, selectedButton->rect.y };
+    Vector2 buttonPos = (Vector2){ selectedButton->rec.x, selectedButton->rec.y };
     selectPointPos = Vector2Add(buttonPos, cursorOffset);
 
     DrawTriangle(Vector2Add(selectPointPos, (Vector2){ -size*2, size }),
@@ -738,7 +744,7 @@ void DrawUiDPad(UiDPad *dpad)
 
     //     DrawRectangleRec(dpad->button[i], buttonColor);
     // }
-    DrawSpriteRectangle(&dpad->texture, dpad->rect, 0);
+    DrawSpriteRectangle(&dpad->texture, dpad->rec, 0);
 }
 
 void DrawUiAnalogStick(UiAnalogStick *stick)
@@ -772,4 +778,18 @@ void DrawDebugInfo(void)
             textY += textSize;
         }
     }
+}
+
+// Other
+// ----------------------------------------------------------------------------
+void SetTimedMessage(char *message, int fontSize, float time)
+{
+    ui.messageTimer = time;
+    float messageLength = MeasureText(message, fontSize);
+
+    ui.timedMessage = (UiText){ .text = message,
+        .position = { (VIRTUAL_WIDTH - messageLength)/2, (VIRTUAL_HEIGHT - fontSize)/2 },
+        .fontSize = fontSize,
+        .color = RAYWHITE
+    };
 }

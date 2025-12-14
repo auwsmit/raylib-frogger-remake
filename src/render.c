@@ -3,7 +3,7 @@
 
 void InitWindowRender(void)
 {
-    render = (RenderData){ .resScale = 2.0f }; // default to 4k render texture
+    render = (RenderData){ .resScale = 1 + 1.0f/3.0f }; // means 1440p default
     InitRenderTexture();
     InitScreenShader();
 }
