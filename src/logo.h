@@ -16,12 +16,12 @@
 
 // Types and Structures
 // ----------------------------------------------------------------------------
-typedef enum LogoState {
+typedef enum {
     LOGO_START, LOGO_GROW1, LOGO_GROW2,
     LOGO_TEXT, LOGO_PAUSE, LOGO_END
 } LogoState;
 
-typedef struct LogoAnimation {
+typedef struct {
     float positionX;
     float positionY;
 
@@ -36,9 +36,7 @@ typedef struct LogoAnimation {
     LogoState state; // Tracking animation states (State Machine)
     float alpha; // Useful for fading
     bool skipped;
-} LogoAnimation;
-
-extern LogoAnimation raylibLogo; // global declaration
+} LogoAnimationState;
 
 // Prototypes
 // ----------------------------------------------------------------------------

@@ -12,6 +12,9 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h" // for dynamic arrays
 
+#define ARENA_IMPLEMENTATION
+#include "arena.h"
+
 // Project Headers
 // ----------------------------------------------------------------------------
 #include "config.h"   // program config, e.g. window title/size, fps, vsync

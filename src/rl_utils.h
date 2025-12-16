@@ -6,7 +6,7 @@
 
 // Types and Structures
 // ----------------------------------------------------------------------------
-typedef struct RaylibAssets { // keep track of raylib resources to free together
+typedef struct { // keep track of raylib resources to free together
     Texture *textures;
     Sound *sounds;
 } RaylibAssets;

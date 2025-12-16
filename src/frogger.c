@@ -61,8 +61,6 @@ void InitGameState(void)
     frog.position = frogSpawnPos;
     frog.position.x += GRID_UNIT/2;
     frog.position.y += GRID_UNIT/2;
-    frog.seekPos = frogSpawnPos;
-    frog.bufferPos = frogSpawnPos;
     arrpush(game.entities, frog);
     game.frog = &arrlast(game.entities);
     game.spawnPos = frog.position;
@@ -332,8 +330,8 @@ void UpdateFrog(Entity *frog)
         Vector2 newSeekPos = Vector2Add(frog->position, moveVector);
 
         // no moving past screen edge
-        pastLeftEdge = (newSeekPos.x + frog->radius < game.gridStart.x + GRID_UNIT);
-        pastRightEdge = (newSeekPos.x - frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
+        pastLeftEdge        = (newSeekPos.x + frog->radius < game.gridStart.x + GRID_UNIT);
+        pastRightEdge       = (newSeekPos.x - frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
         bool pastBottomEdge = (newSeekPos.y - frog->radius > game.gridStart.y + GRID_HEIGHT);
         if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
 
@@ -474,10 +472,10 @@ void DrawGameFrame(void)
             DrawCircleV(e->position, e->radius, frogColor);
             if (e->isWrapping)
             {
-                DrawCircle((int)(e->position.x + GRID_WIDTH),
-                           (int)e->position.y, e->radius, frogColor);
-                DrawCircle((int)(e->position.x - GRID_WIDTH),
-                           (int)e->position.y, e->radius, frogColor);
+                DrawCircleV((Vector2){e->position.x + GRID_WIDTH, e->position.y },
+                            e->radius, frogColor);
+                DrawCircleV((Vector2){e->position.x - GRID_WIDTH, e->position.y },
+                            e->radius, frogColor);
             }
         }
 
@@ -497,20 +495,18 @@ void DrawGameFrame(void)
     // Draw game border (outside of grid)
     // ----------------------------------------------------------------------------
     // left, right, top, bottom
-    DrawRectangle(-1, 0,
-                  (int)(game.gridStart.x + GRID_UNIT + 1),
-                  (int)VIRTUAL_HEIGHT, BLACK);
-    DrawRectangle((int)(game.gridStart.x + GRID_WIDTH - GRID_UNIT), 0,
-                  (int)(VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH) + GRID_UNIT),
-                  (int)VIRTUAL_HEIGHT, BLACK);
-    DrawRectangle((int)game.gridStart.x, 0,
-                  (int)VIRTUAL_HEIGHT,
-                  (int)(VIRTUAL_HEIGHT - (game.gridStart.y + GRID_HEIGHT)),
-                  BLACK);
-    DrawRectangle((int)game.gridStart.x, (int)(game.gridStart.y + GRID_HEIGHT),
-                  (int)VIRTUAL_HEIGHT,
-                  (int)(VIRTUAL_HEIGHT - (game.gridStart.y + GRID_HEIGHT)),
-                  BLACK);
+    DrawRectangleV((Vector2){ -1, 0 },
+                   (Vector2){ game.gridStart.x + GRID_UNIT + 1, VIRTUAL_HEIGHT },
+                   BLACK);
+    DrawRectangleV((Vector2){ game.gridStart.x + GRID_WIDTH - GRID_UNIT, 0 },
+                   (Vector2){ VIRTUAL_WIDTH - (game.gridStart.x + GRID_WIDTH) + GRID_UNIT, VIRTUAL_HEIGHT },
+                   BLACK);
+    DrawRectangleV((Vector2){ game.gridStart.x, 0 },
+                   (Vector2){ VIRTUAL_HEIGHT, (VIRTUAL_HEIGHT - (game.gridStart.y + GRID_HEIGHT)) },
+                   BLACK);
+    DrawRectangleV((Vector2){ game.gridStart.x, (game.gridStart.y + GRID_HEIGHT) },
+                   (Vector2){ VIRTUAL_HEIGHT, (VIRTUAL_HEIGHT - (game.gridStart.y + GRID_HEIGHT)) },
+                   BLACK);
 }
 
 Vector2 GetGridPosition(int col, int row)

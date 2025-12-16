@@ -2,12 +2,11 @@
 // For the raylib logo animation at start of program
 // See header for more documentation/descriptions
 
-// Global animation state
-LogoAnimation logo = { 0 };
+LogoAnimationState logo = { 0 };
 
 void InitRaylibLogo(void)
 {
-    LogoAnimation startOfAnimation = {
+    logo = (LogoAnimationState){
         .positionX = VIRTUAL_WIDTH/2 - RAYLIB_LOGO_WIDTH/2,
         .positionY = VIRTUAL_HEIGHT/2 - RAYLIB_LOGO_WIDTH/2,
 
@@ -22,8 +21,6 @@ void InitRaylibLogo(void)
         .state = LOGO_START, // State machine
         .alpha = 0.0f, // Useful for fading
     };
-
-    logo = startOfAnimation;
 }
 
 void UpdateRaylibLogo(void)

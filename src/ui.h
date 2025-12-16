@@ -40,11 +40,11 @@
 // Types and Structures
 // ----------------------------------------------------------------------------
 
-typedef enum UiMenuState {
+typedef enum {
     UI_MENU_TITLE, UI_MENU_SETTINGS, UI_MENU_PAUSE, UI_MENU_NONE
 } UiMenuState;
 
-typedef enum UiSelectionStyle { // style for menu selection
+typedef enum { // style for menu selection
     UI_SELSTYLE_CURSOR    = (1 << 0),
     UI_SELSTYLE_HL_RECT   = (1 << 1),
     UI_SELSTYLE_HL_TEXT   = (1 << 2),
@@ -52,14 +52,14 @@ typedef enum UiSelectionStyle { // style for menu selection
     UI_SELSTYLE_GROW      = (1 << 4)
 } UiSelectionStyle;
 
-typedef enum UiAlignment {
+typedef enum {
     UI_ALIGN_LEFT     = 0, UI_ALIGN_TOP    = 0,
     UI_ALIGN_CENTER   = 1, UI_ALIGN_MIDDLE = 1,
     UI_ALIGN_RIGHT    = 2, UI_ALIGN_BOTTOM = 2,
     UI_ALIGN_DISABLED = 3
 } UiAlignment;
 
-typedef enum UiInputTrigger { UI_INPUT_ON_PRESS, UI_INPUT_ON_HOLD } UiInputTrigger;
+typedef enum { UI_INPUT_ON_PRESS, UI_INPUT_ON_HOLD } UiInputTrigger;
 
 // Callback functions for interactive elements
 typedef void (*UiActionFunc)(void);
@@ -67,18 +67,18 @@ typedef void (*UiSetFloatFunc)(float setValue, void *slider);
 typedef float (*UiGetFloatFunc)(void);
 typedef bool (*UiGetBoolFunc)(void);
 
-typedef struct UiSounds {
+typedef struct {
     Sound menu;
 } UiSounds;
 
-typedef struct UiText {
+typedef struct {
     Color color;
     Vector2 position;
     int fontSize;
     const char *text;
 } UiText;
 
-typedef struct UiCheckbox {
+typedef struct {
     Texture texture;
     Rectangle rec;
     Vector2 position;
@@ -87,7 +87,7 @@ typedef struct UiCheckbox {
     UiGetBoolFunc getValue;
 } UiCheckbox;
 
-typedef struct UiSlider {
+typedef struct {
     Texture texture;
     Rectangle rec;
     float min, max;
@@ -97,7 +97,7 @@ typedef struct UiSlider {
     bool active;
 } UiSlider;
 
-typedef struct UiButton {
+typedef struct {
     Texture texture;
     Vector2 position;
     Vector2 growPos;
@@ -116,7 +116,7 @@ typedef struct UiButton {
     const char *text;
 } UiButton;
 
-typedef struct UiMenu {
+typedef struct {
     UiText *text;
     UiButton *buttons;
     float buttonWidth;
@@ -125,7 +125,7 @@ typedef struct UiMenu {
     UiSelectionStyle selectStyleFlags; // (e.g. cursor, underline, highlight)
 } UiMenu;
 
-typedef struct UiAnalogStick {
+typedef struct {
     Texture textureBase,  textureNub;
     Vector2 centerPos,    stickPos;
     float   centerRadius, stickRadius;
@@ -134,11 +134,9 @@ typedef struct UiAnalogStick {
     bool enabled;
 } UiAnalogStick;
 
-typedef enum UiDPadDirections {
-    UI_DPAD_UP, UI_DPAD_DOWN, UI_DPAD_LEFT, UI_DPAD_RIGHT
-} UiDPadDirections;
+typedef enum { UI_DPAD_UP, UI_DPAD_DOWN, UI_DPAD_LEFT, UI_DPAD_RIGHT } UiDPadDirections;
 
-typedef struct UiDPad {
+typedef struct {
     Texture texture;
     Rectangle button[4]; // up, down, left, right
     Rectangle rec; // for drawing dpad sprite
@@ -150,14 +148,15 @@ typedef struct UiDPad {
     bool enabled;
 } UiDPad;
 
-typedef struct UiGamepad { // Virtual touchscreen input
+typedef struct { // Virtual touchscreen input
     UiButton pause;
     UiAnalogStick stick;
     UiDPad dpad;
 } UiGamepad;
 
-typedef struct UiState {
+typedef struct {
     // Primary data
+    Arena arena;
     RaylibAssets assets;
     UiSounds sounds;
     Camera2D camera;

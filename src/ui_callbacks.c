@@ -42,7 +42,10 @@ void UiCallbackGoToTitle(void)
 
     // Reset game state if returning from gameplay
     if (game.currentScreen == SCREEN_GAMEPLAY)
+    {
+        FreeGameState();
         InitGameState();
+    }
 }
 
 // Settings

@@ -6,9 +6,9 @@ InputActionMaps inputMaps; // contains defined input action controls
 
 void InitDefaultInputSettings(void)
 {
-    // Setup input defaults
-    InputState defaults = {
-        // Analog sticks deadzone defaults
+    // Setup default input
+    input = (InputState){
+        // Analog sticks deadzone input
         .gamepad.leftStickDeadzone = 0.25f,
         .gamepad.rightStickDeadzone = 0.25f,
         .gamepad.leftTriggerDeadzone = -0.9f,
@@ -17,9 +17,7 @@ void InitDefaultInputSettings(void)
 
     // For touch point UI button tracking
     for (int i = 0; i < INPUT_MAX_TOUCH_POINTS; i++)
-        defaults.touchPoints[i].currentButton = -1;
-
-    input = defaults;
+        input.touchPoints[i].currentButton = -1;
 
     // Setup input action control mappings
     inputMaps = (InputActionMaps){
@@ -60,8 +58,8 @@ void InitDefaultInputSettings(void)
         .gamepadButton[INPUT_ACTION_RIGHT] = { GAMEPAD_DPAD_RIGHT },
         .gamepadAxis[INPUT_ACTION_UP]      = { GAMEPAD_AXIS_LEFT_Y, -INPUT_ANALOG_MENU_DEADZONE },
         .gamepadAxis[INPUT_ACTION_DOWN]    = { GAMEPAD_AXIS_LEFT_Y, INPUT_ANALOG_MENU_DEADZONE },
-        .gamepadAxis[INPUT_ACTION_LEFT]    = { GAMEPAD_AXIS_LEFT_X, -INPUT_ANALOG_MENU_DEADZONE },
-        .gamepadAxis[INPUT_ACTION_RIGHT]   = { GAMEPAD_AXIS_LEFT_X, INPUT_ANALOG_MENU_DEADZONE },
+        .gamepadAxis[INPUT_ACTION_LEFT]    = { INPUT_GAMEPAD_AXIS_LEFT_X, -INPUT_ANALOG_MENU_DEADZONE },
+        .gamepadAxis[INPUT_ACTION_RIGHT]   = { INPUT_GAMEPAD_AXIS_LEFT_X, INPUT_ANALOG_MENU_DEADZONE },
         .key[INPUT_ACTION_PAUSE]           = { KEY_P, KEY_ESCAPE },
         .key[INPUT_ACTION_UP]              = { KEY_W, KEY_UP, },
         .key[INPUT_ACTION_DOWN]            = { KEY_S, KEY_DOWN, },

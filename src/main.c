@@ -22,13 +22,13 @@
 #include "ui_callbacks.c"
 #include "ui.c"
 
-// Game code
+// Frogger
 #include "frogger.c"
 
 // Globals
-GameState  game;   // program and game-specific data
-InputState input;  // holds data related to input
-UiState    ui;     // user interface
+GameState  game;
+InputState input;
+UiState    ui;
 RenderData render;
 
 // Local Functions Declaration
@@ -64,8 +64,8 @@ int main(void)
 
     // De-Initialization
     // ----------------------------------------------------------------------------
-    // FreeGameState();
-    // FreeUiState();
+    FreeGameState();
+    FreeUiState();
     CloseAudioDevice();
     UnloadShader(render.shader);
     UnloadRenderTexture(render.renderTarget);

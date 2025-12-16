@@ -36,7 +36,6 @@ output=frogger
 source_code=src/main.c
 
 raylib_dep=deps/raylib
-raylib_dep=deps/stb
 
 cmake_build_dir=build
 
@@ -108,7 +107,7 @@ script_choose_cmake_lines()
 script_choose_simple_lines()
 {
     # Line Definitions
-    cc_common="-I\"$raylib_dep\" -I\"$stb_dep\" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wstrict-prototypes -Wfloat-conversion"
+    cc_common="-I\"$raylib_dep\" -I\"deps\" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wstrict-prototypes -Wfloat-conversion"
     cc_debug='-g -O0'
     cc_release='-O2'
     cc_platform='-DPLATFORM_DESKTOP'

@@ -34,7 +34,7 @@ SRC := src/main.c
 
 # Dependencies
 RAYLIB_DEP := deps/raylib
-STB_DEP := deps/stb
+DEPS := deps
 
 # Output
 ifeq ($(PLATFORM),DESKTOP)
@@ -64,7 +64,7 @@ CFLAGS_DEBUG   := -g -O0
 LDFLAGS_DEBUG  :=
 CFLAGS         := -std=c99 -Wall -Wno-missing-braces -Wunused-result \
                   -Wextra -Wstrict-prototypes -Wfloat-conversion
-CPPFLAGS       := -I"$(RAYLIB_DEP)" -I"$(STB_DEP)" -D_DEFAULT_SOURCE
+CPPFLAGS       := -I"$(RAYLIB_DEP)" -I"$(DEPS)" -D_DEFAULT_SOURCE
 PLATFORM_DEF   := -DPLATFORM_DESKTOP
 OUTPUT_FLAG    := -o $(OUTPUT)$(EXTENSION)
 
@@ -73,7 +73,7 @@ ifeq ($(CC),cl) # MSVC
     CFLAGS_RELEASE := /O2
     CFLAGS_DEBUG   := /Od /Zi
     CFLAGS         := /W3 /MD
-    CPPFLAGS       := /I"$(RAYLIB_DEP)" /I"$(STB_DEP)" /D_DEFAULT_SOURCE
+    CPPFLAGS       := /I"$(RAYLIB_DEP)" /I"$(DEPS)" /D_DEFAULT_SOURCE
     LDFLAGS        := /link /LIBPATH:"$(RAYLIB_DEP)/lib/windows-msvc" \
                       raylib.lib gdi32.lib winmm.lib user32.lib shell32.lib
     LDFLAGS_DEBUG  := /DEBUG

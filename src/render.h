@@ -8,7 +8,7 @@
 
 // Types and Structures
 // ----------------------------------------------------------------------------
-typedef struct RenderData {
+typedef struct {
     RenderTexture renderTarget;
     float width, height, scale, x, y,
           renderTexWidth, renderTexHeight, resScale;

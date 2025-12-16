@@ -37,7 +37,7 @@
 
 // Types and Structures
 // ----------------------------------------------------------------------------
-typedef enum InputAction {
+typedef enum {
     INPUT_ACTION_NULL,
 
     // global
@@ -60,7 +60,7 @@ typedef enum InputAction {
     INPUT_ACTION_RIGHT,
 } InputAction;
 
-typedef enum InputPollFlag {
+typedef enum {
     INPUT_POLL_ALL      = (255 << 0),
     INPUT_POLL_MOUSE    = (1 << 1),
     INPUT_POLL_KEYBOARD = (1 << 2),
@@ -71,12 +71,12 @@ typedef enum InputPollFlag {
     INPUT_POLL_PLAYER   = (1 << 7)
 } InputPollFlag;
 
-typedef struct InputActionsGlobal {
+typedef struct {
     bool fullscreen;
     bool debug;
 } InputActionsGlobal;
 
-typedef struct InputActionsMenu {
+typedef struct {
     bool confirm;
     bool cancel;
     bool moveUp;
@@ -85,7 +85,7 @@ typedef struct InputActionsMenu {
     bool moveRight;
 } InputActionsMenu;
 
-typedef struct InputActionsPlayer {
+typedef struct {
     bool pause;
     bool moveUp;
     bool moveDown;
@@ -93,7 +93,7 @@ typedef struct InputActionsPlayer {
     bool moveRight;
 } InputActionsPlayer;
 
-typedef struct InputMouseState {
+typedef struct {
     Vector2 gamePosition;
     Vector2 uiPosition;
     Vector2 delta;
@@ -105,7 +105,7 @@ typedef struct InputMouseState {
     bool pressed;
 } InputMouseState;
 
-typedef struct InputGamepadState {
+typedef struct {
     float leftStickDeadzone;
     float rightStickDeadzone;
     float leftTriggerDeadzone;
@@ -119,7 +119,7 @@ typedef struct InputGamepadState {
     bool available;
 } InputGamepadState;
 
-typedef struct TouchPoint {
+typedef struct {
     Vector2 gamePosition;
     Vector2 uiPosition;
     bool isActive;
@@ -129,13 +129,13 @@ typedef struct TouchPoint {
     int currentButton; // TODO this should probably just be a bool
 } TouchPoint;
 
-typedef struct GamepadAxisMap {
+typedef struct {
     GamepadAxis axis;
     float deadzone; // the threshold for axis to be 'pressed down' as a button
                     // used to map analog stick or trigger as buttons
 } GamepadAxisMap;
 
-typedef struct InputActionMaps {
+typedef struct {
     KeyboardKey key[INPUT_MAX_ACTIONS][INPUT_MAX_MAPS];
     MouseButton mouse[INPUT_MAX_ACTIONS][4];
     GamepadButton gamepadButton[INPUT_MAX_ACTIONS][INPUT_MAX_MAPS];
@@ -143,7 +143,7 @@ typedef struct InputActionMaps {
 } InputActionMaps;
 
 // Tracks input data for the current frame
-typedef struct InputState {
+typedef struct {
     // bools for input actions
     // e.g. if (input.global.fullscreen) ToggleFullscreen();
     InputActionsGlobal global;
@@ -174,7 +174,7 @@ typedef struct InputState {
     float cancelTime;
 } InputState;
 
-typedef struct AutoRepeatSettings { // for auto rapid-fire input
+typedef struct { // for auto rapid-fire input
     float triggerTime;
     float fireInterval;
     float heldTime;
@@ -197,10 +197,10 @@ void CancelInputActions(void); // Cancel all user input actions for the current 
 // Input Actions
 bool IsInputKeyModifier(KeyboardKey key);
 bool IsInputActionDown(InputAction action);
-bool IsInputActionAxisDown(InputAction action);
-bool IsInputActionMouseDown(InputAction action);
 bool IsInputActionPressed(InputAction action);
+bool IsInputActionAxisDown(InputAction action);
 bool IsInputActionAxisPressed(InputAction action);
+bool IsInputActionMouseDown(InputAction action);
 bool IsInputActionMousePressed(InputAction action);
 
 // Touch

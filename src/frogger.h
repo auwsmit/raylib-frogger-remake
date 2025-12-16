@@ -120,7 +120,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed); // create 
                                                                       // . half unit space
                                                                       // o half width
                                                                       // O full width
-// void FreeGameState(void);
+void FreeGameState(void);
 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame

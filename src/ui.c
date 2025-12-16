@@ -265,7 +265,7 @@ void CreateUiCheckbox(UiGetBoolFunc getValue)
         button->rec.x -= radius*0.75f + 25;
     }
 
-    button->checkbox = malloc(sizeof(UiCheckbox));
+    button->checkbox = arena_alloc(&ui.arena, sizeof(UiCheckbox));
     *button->checkbox = newCheckbox;
 }
 
@@ -289,7 +289,7 @@ void CreateUiSlider(UiSetFloatFunc setValue, UiGetFloatFunc getValue, float minV
     button->rec.height += button->height/2;
     button->height += button->height/2;
 
-    button->slider = malloc(sizeof(UiSlider));
+    button->slider = arena_alloc(&ui.arena, sizeof(UiSlider));
     *button->slider = newSlider;
 }
 
@@ -305,13 +305,13 @@ void SetUiAlignMode(UiAlignment hAlign, UiAlignment vAlign)
 //     ui.vAlign = UI_ALIGN_DISABLED;
 // }
 
-// void FreeUiState(void)
-// {
-//     for (int i = 0; i < UI_MENU_AMOUNT; i++)
-//         arrfree(ui.menus[i].buttons);
-
-//     FreeRaylibAssets(&ui.assets);
-// }
+void FreeUiState(void)
+{
+    for (int i = 0; i < UI_MENU_AMOUNT; i++)
+        arrfree(ui.menus[i].buttons);
+    arena_free(&ui.arena);
+    FreeRaylibAssets(&ui.assets);
+}
 
 // Update / User Input
 // ----------------------------------------------------------------------------
@@ -785,10 +785,10 @@ void DrawDebugInfo(void)
 void SetTimedMessage(char *message, int fontSize, float time)
 {
     ui.messageTimer = time;
-    float messageLength = MeasureText(message, fontSize);
+    int messageLength = MeasureText(message, fontSize);
 
     ui.timedMessage = (UiText){ .text = message,
-        .position = { (VIRTUAL_WIDTH - messageLength)/2, (VIRTUAL_HEIGHT - fontSize)/2 },
+        .position = { (float)(VIRTUAL_WIDTH - messageLength)/2, (float)(VIRTUAL_HEIGHT - fontSize)/2 },
         .fontSize = fontSize,
         .color = RAYWHITE
     };

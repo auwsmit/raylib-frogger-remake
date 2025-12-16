@@ -40,7 +40,6 @@ set output=frogger
 set source_code=src\main.c
 
 set raylib_dep=deps\raylib
-set stb_dep=deps\stb
 
 set cmake_build_dir=build
 
@@ -99,14 +98,14 @@ if "%cmake%"=="1" (
 
 :: Compile/Link Line Definitions
 :: ----------------------------------------------------------------------------
-set cc_common=   -I"%raylib_dep%" -I"%stb_dep%" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wstrict-prototypes -Wfloat-conversion
+set cc_common=   -I"%raylib_dep%" -I"deps" -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Wunused-result -Wextra -Wstrict-prototypes -Wfloat-conversion
 set cc_debug=    -g -O0
 set cc_release=  -O2
 set cc_platform= -DPLATFORM_DESKTOP
 set cc_link=     -lraylib -L"%raylib_dep%\lib\windows-mingw" -lopengl32 -lgdi32 -lwinmm
 set cc_out=      -o
 
-set cl_common=   cl /I"%raylib_dep%" /I"%stb_dep%" /W3 /MD
+set cl_common=   cl /I"%raylib_dep%" /I"deps" /W3 /MD
 set cl_debug=    /Od /Zi
 set cl_release=  /O2
 set cl_platform= /DPLATFORM_DESKTOP

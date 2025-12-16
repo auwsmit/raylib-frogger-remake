@@ -38,7 +38,7 @@ endif()
 # -----------------------------------------------------------------------------
 add_executable(${OUTPUT_NAME})
 target_sources(${OUTPUT_NAME} PRIVATE             src/main.c)
-target_include_directories(${OUTPUT_NAME} PRIVATE deps/stb)
+target_include_directories(${OUTPUT_NAME} PRIVATE deps)
 target_link_libraries(${OUTPUT_NAME} PRIVATE      raylib)
 
 # Platform settings
