@@ -37,6 +37,8 @@ void InitGameState(void)
 
     SetTimedMessage("Game Start!", 100, 2.0f);
 
+    // TODO sprite maps
+
     // Create entities
     // ----------------------------------------------------------------------------
 
@@ -53,7 +55,7 @@ void InitGameState(void)
     // Frog
     Entity frog = {
         .type = ENTITY_TYPE_FROG,
-        .speed = BASE_SPEED*5.0f,
+        .speed = BASE_SPEED*4.0f,
         .radius = GRID_UNIT*0.4f,
         .color = GREEN,
     };
@@ -347,6 +349,11 @@ void UpdateFrog(Entity *frog)
         // set buffered position
         else if (!frog->isMoveBuffered && !Vector2Equals(frog->bufferPos, newBufferPos))
         {
+            pastLeftEdge        = (newBufferPos.x + frog->radius < game.gridStart.x + GRID_UNIT);
+            pastRightEdge       = (newBufferPos.x - frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
+            pastBottomEdge = (newBufferPos.y - frog->radius > game.gridStart.y + GRID_HEIGHT);
+            if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
+
             frog->bufferPos = newBufferPos;
             frog->isMoveBuffered = true;
         }

@@ -4,8 +4,6 @@
 #ifndef FROGGER_RENDER_HEADER_GUARD
 #define FROGGER_RENDER_HEADER_GUARD
 
-#define SHADER_PIXEL_SIZE 8
-
 // Types and Structures
 // ----------------------------------------------------------------------------
 typedef struct {
@@ -14,9 +12,9 @@ typedef struct {
           renderTexWidth, renderTexHeight, resScale;
 
     Shader shader;
-    int shaderRenderWidthLoc,  shaderRenderHeightLoc,
-        shaderPixelWidthLoc, shaderPixelHeightLoc;
-    float pixelSize;
+    // int shaderRenderWidthLoc,  shaderRenderHeightLoc,
+    //     shaderPixelWidthLoc, shaderPixelHeightLoc;
+    // float pixelSize;
     bool shaderEnabled;
 } RenderData;
 

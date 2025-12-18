@@ -80,56 +80,34 @@ void InitUiState(void)
     // Touch input buttons (virtual gamepad)
     // ----------------------------------------------------------------------------
     // Analog stick
-    UiAnalogStick stick = { 0 };
-    stick.centerPos.x = UI_STICK_RADIUS + UI_INPUT_PADDING;
-    stick.centerPos.y = VIRTUAL_HEIGHT - UI_STICK_RADIUS - UI_INPUT_PADDING;
-    stick.stickPos = stick.centerPos;
-    stick.centerRadius = UI_STICK_RADIUS;
-    stick.stickRadius = UI_STICK_RADIUS/2;
-    stick.lastTouchId = -1;
-    stick.enabled = false;
-    ui.gamepad.stick = stick;
+    ui.gamepad.stick = (UiAnalogStick){
+        .lastTouchId = -1,
+        .enabled = false,
+    };
 
     // D-Pad
-    UiDPad dpad = { 0 };
-    dpad.width = UI_DPAD_WIDTH;
-    dpad.position.x = dpad.width*1.5f + UI_INPUT_PADDING;
-    dpad.position.y = VIRTUAL_HEIGHT - dpad.width*1.5f - UI_INPUT_PADDING;
-    dpad.button[UI_DPAD_UP] =
-        (Rectangle){ dpad.position.x - dpad.width*1.5f,
-            dpad.position.y - dpad.width*1.5f,
-            dpad.width*3, dpad.width };
-    dpad.button[UI_DPAD_DOWN] =
-        (Rectangle){ dpad.position.x - dpad.width*1.5f,
-            dpad.position.y + dpad.width*0.5f,
-            dpad.width*3, dpad.width };
-    dpad.button[UI_DPAD_LEFT] =
-        (Rectangle){ dpad.position.x - dpad.width*1.5f,
-            dpad.position.y - dpad.width*1.5f,
-            dpad.width, dpad.width*3 };
-    dpad.button[UI_DPAD_RIGHT] =
-        (Rectangle){ dpad.position.x + dpad.width*0.5f,
-            dpad.position.y - dpad.width*1.5f,
-            dpad.width, dpad.width*3 };
-    dpad.rec =
-        (Rectangle){ dpad.button[UI_DPAD_UP].x, dpad.button[UI_DPAD_UP].y,
-            dpad.width*3, dpad.width*3 };
-    dpad.inputActionId[UI_DPAD_UP] = INPUT_ACTION_UP;
-    dpad.inputActionId[UI_DPAD_DOWN] = INPUT_ACTION_DOWN;
-    dpad.inputActionId[UI_DPAD_LEFT] = INPUT_ACTION_LEFT;
-    dpad.inputActionId[UI_DPAD_RIGHT] = INPUT_ACTION_RIGHT;
-    dpad.enabled = true;
-    ui.gamepad.dpad = dpad;
+    ui.gamepad.dpad = (UiDPad){
+        .inputActionId[UI_DPAD_UP] = INPUT_ACTION_UP,
+        .inputActionId[UI_DPAD_DOWN] = INPUT_ACTION_DOWN,
+        .inputActionId[UI_DPAD_LEFT] = INPUT_ACTION_LEFT,
+        .inputActionId[UI_DPAD_RIGHT] = INPUT_ACTION_RIGHT,
+        .enabled = true,
+    };
 
     // Pause button
-    float pausePosX = VIRTUAL_WIDTH - UI_INPUT_RADIUS*0.8f - UI_INPUT_PADDING;
-    float pausePosY = VIRTUAL_HEIGHT - UI_DPAD_WIDTH - UI_INPUT_PADDING;
-    ui.gamepad.pause = InitUiInputButton("Pause", INPUT_ACTION_PAUSE, pausePosX, pausePosY, UI_INPUT_RADIUS*0.8f);
+    ui.gamepad.pause = (UiButton){
+        .text = "Pause",
+        .textureScale = 1.333f,
+        .inputActionId = INPUT_ACTION_PAUSE,
+        .color = RAYWHITE
+    };
 
     ui.gamepad.stick.textureBase = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_base.png");
     ui.gamepad.stick.textureNub  = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_nub.png");
     ui.gamepad.dpad.texture      = LoadTextureAsset(&ui.assets, "assets/textures/dpad.png");
     ui.gamepad.pause.texture     = LoadTextureAsset(&ui.assets, "assets/textures/button_pause.png");
+
+    UpdateUiGamepadRender();
 }
 
 UiButton InitUiButton(char *text, UiActionFunc actionFunc, float x, float y, float buttonWidth, int fontSize)
@@ -356,6 +334,9 @@ void UpdateUiFrame(void)
         UpdateUiButtonSelect(selectedButton);
     }
 
+    // Update touch gamepad for window size
+    UpdateUiGamepadRender();
+
     // Update specific text fade
     if (game.isPaused)
     {
@@ -512,6 +493,60 @@ void UpdateUiSliderSelect(UiSlider *slider)
 
 // Touch screen virtual gamepad
 // ----------------------------------------------------------------------------
+void UpdateUiGamepadRender(void)
+{
+    int winWidth = GetRenderWidth();
+    int winHeight = GetRenderHeight();
+    float scale = ui.camera.zoom;
+    float padding = UI_INPUT_PADDING*scale;
+
+    UiAnalogStick *stick = &ui.gamepad.stick;
+    stick->centerRadius = UI_STICK_RADIUS*scale;
+    stick->stickRadius = UI_STICK_RADIUS/2*scale;
+    stick->centerPos.x = stick->centerRadius + padding;
+    stick->centerPos.y = winHeight - stick->centerRadius - padding;
+    stick->stickPos = stick->centerPos;
+
+    UiDPad *dpad = &ui.gamepad.dpad;
+    dpad->width = UI_DPAD_WIDTH*scale;
+    dpad->button[UI_DPAD_UP].width = dpad->width*3;
+    dpad->button[UI_DPAD_UP].height = dpad->width;
+    dpad->button[UI_DPAD_DOWN].width = dpad->width*3;
+    dpad->button[UI_DPAD_DOWN].height = dpad->width;
+    dpad->button[UI_DPAD_LEFT].width = dpad->width;
+    dpad->button[UI_DPAD_LEFT].height = dpad->width*3;
+    dpad->button[UI_DPAD_RIGHT].width = dpad->width;
+    dpad->button[UI_DPAD_RIGHT].height = dpad->width*3;
+    dpad->rec.width = dpad->width*3;
+    dpad->rec.height = dpad->width*3;
+    dpad->position.x = dpad->width*1.5f + padding;
+    dpad->position.y = winHeight - dpad->width*1.5f - padding;
+    dpad->button[UI_DPAD_UP] =
+        (Rectangle){ dpad->position.x - dpad->width*1.5f,
+            dpad->position.y - dpad->width*1.5f,
+            dpad->width*3, dpad->width };
+    dpad->button[UI_DPAD_DOWN] =
+        (Rectangle){ dpad->position.x - dpad->width*1.5f,
+            dpad->position.y + dpad->width*0.5f,
+            dpad->width*3, dpad->width };
+    dpad->button[UI_DPAD_LEFT] =
+        (Rectangle){ dpad->position.x - dpad->width*1.5f,
+            dpad->position.y - dpad->width*1.5f,
+            dpad->width, dpad->width*3 };
+    dpad->button[UI_DPAD_RIGHT] =
+        (Rectangle){ dpad->position.x + dpad->width*0.5f,
+            dpad->position.y - dpad->width*1.5f,
+            dpad->width, dpad->width*3 };
+    dpad->rec =
+        (Rectangle){ dpad->button[UI_DPAD_UP].x, dpad->button[UI_DPAD_UP].y,
+            dpad->width*3, dpad->width*3 };
+
+    UiButton *pause = &ui.gamepad.pause;
+    pause->radius = UI_INPUT_RADIUS*0.8f*scale;
+    pause->position.x = winWidth - pause->radius - padding;
+    pause->position.y = winHeight - dpad->width - padding;
+}
+
 void UpdateUiTouchInput(UiButton *button, UiInputTrigger onPressOrHold)
 {
     int touchIdx = CheckCollisionTouchCircle(button->position, button->radius);
@@ -559,7 +594,7 @@ void UpdateUiAnalogStick(UiAnalogStick *stick)
 
     // is touching analog stick
     stick->lastTouchId = input.touchPoints[touchIdx].id;
-    Vector2 touchPos = input.touchPoints[touchIdx].uiPosition;
+    Vector2 touchPos = input.touchPoints[touchIdx].position;
 
     bool isTouchWithinStick =
         CheckCollisionPointCircle(touchPos, stick->centerPos, stick->centerRadius);
@@ -619,13 +654,6 @@ void DrawUiFrame(void)
                      textElem->fontSize, textElem->color);
         }
     }
-    else if (game.currentScreen == SCREEN_GAMEPLAY && input.touchMode)
-    {
-        // Touch screen input controls
-        DrawUiInputButton(&ui.gamepad.pause);
-        if (ui.gamepad.dpad.enabled) DrawUiDPad(&ui.gamepad.dpad);
-        if (ui.gamepad.stick.enabled) DrawUiAnalogStick(&ui.gamepad.stick);
-    }
 
     // Gameplay UI
     // ----------------------------------------------------------------------------
@@ -638,6 +666,19 @@ void DrawUiFrame(void)
 
     // Debug info
     if (game.isDebugMode) DrawDebugInfo();
+}
+
+void DrawUiGamepad(void)
+{
+    if (input.touchMode &&
+        ui.currentMenu == UI_MENU_NONE &&
+        game.currentScreen == SCREEN_GAMEPLAY)
+    {
+        // Touch screen input controls
+        DrawUiInputButton(&ui.gamepad.pause);
+        if (ui.gamepad.dpad.enabled) DrawUiDPad(&ui.gamepad.dpad);
+        if (ui.gamepad.stick.enabled) DrawUiAnalogStick(&ui.gamepad.stick);
+    }
 }
 
 void DrawUiButton(UiButton *button)

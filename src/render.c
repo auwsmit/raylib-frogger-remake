@@ -47,23 +47,21 @@ void UpdateWindowRenderFrame(void)
 
     render.scale = fminf(render.width/render.renderTexWidth, render.height/render.renderTexHeight);
 
-    // int winWidth = GetRenderWidth();
-    // int winHeight = GetRenderWidth();
-    float windowAspect = (float)winWidth/(float)winHeight;
+    float windowAspect = winWidth/winHeight;
 
     if (windowAspect > ASPECT_RATIO)
     {
         // Window too wide → pillarbox
-        render.height = (float)winHeight;
-        render.width = (float)(winHeight*ASPECT_RATIO);
+        render.height = winHeight;
+        render.width = (winHeight*ASPECT_RATIO);
         render.x = (winWidth - render.width)/2;
         render.y = 0;
     }
     else
     {
         // Window too tall → letterbox
-        render.width = (float)winWidth;
-        render.height = (float)(winWidth/ASPECT_RATIO);
+        render.width = winWidth;
+        render.height = winWidth/ASPECT_RATIO;
         render.x = 0;
         render.y = (winHeight - render.height)/2;
     }
@@ -72,5 +70,5 @@ void UpdateWindowRenderFrame(void)
     ui.camera.offset = (Vector2) {
         render.x + render.width/2.0f, render.y + render.height/2.0f
     };
-    ui.camera.zoom = (float)render.width/VIRTUAL_WIDTH;
+    ui.camera.zoom = render.width/VIRTUAL_WIDTH;
 }

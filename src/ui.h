@@ -208,6 +208,7 @@ void UpdateUiSliderSelect(UiSlider *slider);
 void ChangeUiMenu(UiMenuState newMenu); // Change from one menu to another
 
 // Touch screen virtual gamepad
+void UpdateUiGamepadRender(void);
 void UpdateUiTouchInput(UiButton *button, UiInputTrigger onPressOrHold); // Updates virtual input from button
 void UpdateUiAnalogStick(UiAnalogStick *stick);
 void UpdateUiDPad(UiDPad *dpad);
@@ -218,6 +219,7 @@ int IsTouchWithinUiButton(UiButton *button);
 
 // Draw
 void DrawUiFrame(void); // Draws all the UI buttons for the current frame
+void DrawUiGamepad(void);
 void DrawUiButton(UiButton *button);
 void DrawUiCursor(UiButton *selectedButton); // Draw the cursor at the given button
 void DrawUiInputButton(UiButton *button); // Draw touch input button

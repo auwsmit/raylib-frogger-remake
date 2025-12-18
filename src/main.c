@@ -22,7 +22,7 @@
 #include "ui_callbacks.c"
 #include "ui.c"
 
-// Frogger
+// Game code
 #include "frogger.c"
 
 // Globals
@@ -121,13 +121,14 @@ void UpdateDrawFrame(void)
     // Draw
     // ----------------------------------------------------------------------------
 
-    // Draw to render texture for full window shader effect
+    // Draw to render texture
     BeginTextureMode(render.renderTarget);
-        ClearBackground(BLACK);
         BeginMode2D(game.camera);
 
             switch(game.currentScreen)
             {
+                case SCREEN_LOGO:     DrawRaylibLogo();
+                                      break;
                 case SCREEN_TITLE:    ClearBackground(DARKGREEN);
                                       break;
                 case SCREEN_GAMEPLAY: DrawGameFrame();
@@ -138,11 +139,12 @@ void UpdateDrawFrame(void)
         EndMode2D();
     EndTextureMode();
 
-    // Draw render texture with shader
+    // Draw render texture
     BeginDrawing();
+        ClearBackground(BLACK);
+        // Draw full-screen shader effect
         if (render.shaderEnabled) BeginShaderMode(render.shader);
 
-            ClearBackground(BLACK);
             DrawTexturePro(render.renderTarget.texture,
                            (Rectangle){ 0, 0,
                            (float)render.renderTarget.texture.width,
@@ -153,25 +155,24 @@ void UpdateDrawFrame(void)
 
         if (render.shaderEnabled) EndShaderMode();
 
-        // Draw non-shader element overlay (UI and boot logo animation)
-        BeginScissorMode((int)render.x,
-                         (int)render.y, // draw within aspect ratio
-                         (int)render.width,
-                         (int)render.height);
+        // Draw UI above render texture
+        BeginScissorMode((int)render.x, // draw within aspect ratio
+                         (int)render.y, (int)render.width, (int)render.height);
         BeginMode2D(ui.camera);
 
             switch(game.currentScreen)
             {
-                case SCREEN_LOGO:     DrawRaylibLogo();
-                                      break;
                 case SCREEN_TITLE:
                 case SCREEN_GAMEPLAY: DrawUiFrame();
                                       break;
                 default: break;
             }
-
         EndMode2D();
         EndScissorMode();
+
+        // Draw touch screen gamepad on screen edges
+        DrawUiGamepad();
+
     EndDrawing();
 }
 

@@ -111,11 +111,11 @@ void ProcessUserInput(InputPollFlag pollType)
     {
         Vector2 mousePos = GetMousePosition();
         // adjust for window offset and scale (not needed for UI)
-        Vector2 adjustMousePos = {
+        Vector2 gameMousePos = {
             (mousePos.x - render.x)/render.scale,
             (mousePos.y - render.y)/render.scale
         };
-        input.mouse.gamePosition = GetScreenToWorld2D(adjustMousePos, game.camera);
+        input.mouse.gamePosition = GetScreenToWorld2D(gameMousePos, game.camera);
         input.mouse.uiPosition   = GetScreenToWorld2D(mousePos, ui.camera);
         input.mouse.delta        = Vector2Scale(GetMouseDelta(), 1.0f/game.camera.zoom);
         input.mouse.moved        = (Vector2Length(input.mouse.delta) > EPSILON);
@@ -178,13 +178,13 @@ void ProcessUserInput(InputPollFlag pollType)
             for (int i = 0; i < tCount; i++)
             {
                 Vector2 touchPos = GetTouchPosition(i);
-                Vector2 adjustTouchPos = {
+                Vector2 gameTouchPos = {
                     (touchPos.x - render.x)/render.scale,
                     (touchPos.y - render.y)/render.scale
                 };
                 TouchPoint *touchPoint           = &input.touchPoints[i];
-                touchPoint->gamePosition         = GetScreenToWorld2D(adjustTouchPos, game.camera);
-                touchPoint->uiPosition           = GetScreenToWorld2D(touchPos, ui.camera);
+                touchPoint->gamePosition         = GetScreenToWorld2D(gameTouchPos, game.camera);
+                touchPoint->position             = touchPos;
                 touchPoint->pressedPreviousFrame = touchPoint->pressedCurrentFrame;
                 touchPoint->pressedCurrentFrame  = true;
                 touchPoint->currentButton        = -1;
@@ -501,7 +501,7 @@ bool IsTouchingAnyButton(int index)
 int CheckCollisionTouchCircle(Vector2 center, float radius)
 {
     for (int i = 0; i < input.touchCount; ++i)
-        if (CheckCollisionPointCircle(input.touchPoints[i].uiPosition, center, radius))
+        if (CheckCollisionPointCircle(input.touchPoints[i].position, center, radius))
             return i;
 
     return -1;
@@ -510,7 +510,7 @@ int CheckCollisionTouchCircle(Vector2 center, float radius)
 int CheckCollisionTouchRec(Rectangle rec)
 {
     for (int i = 0; i < input.touchCount; ++i)
-        if (CheckCollisionPointRec(input.touchPoints[i].uiPosition, rec))
+        if (CheckCollisionPointRec(input.touchPoints[i].position, rec))
             return i;
 
     return -1;

@@ -121,7 +121,7 @@ typedef struct {
 
 typedef struct {
     Vector2 gamePosition;
-    Vector2 uiPosition;
+    Vector2 position;
     bool isActive;
     bool pressedPreviousFrame;
     bool pressedCurrentFrame;
