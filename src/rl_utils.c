@@ -33,24 +33,22 @@ void FreeRaylibAssets(RaylibAssets *pool)
 
 // Draw sprites
 // ----------------------------------------------------------------------------
-void DrawSpriteRectangle(Texture *sprite, Rectangle rect, float angle)
+void DrawSpriteOnRectangle(Texture *sprite, Rectangle src, Rectangle rect, float angle)
 {
-    Rectangle src = { 0, 0, (float)sprite->width, (float)sprite->height };
     DrawTexturePro(*sprite, src, rect, Vector2Zero(), angle, WHITE);
 }
 
-void DrawSpriteCircle(Texture *sprite, Vector2 center, float radius,
-                      float angle, float textureScale)
+void DrawSpriteOnCircle(Texture *sprite, Rectangle src, Vector2 center, float radius,
+                      float angle, float spriteScale)
 {
-    float spriteScale = radius*2.0f/sprite->width*textureScale;
-    Rectangle spriteSrc = { 0.0f, 0.0f, (float)sprite->width, (float)sprite->height };
+    float scale = radius*2.0f/sprite->width*spriteScale;
     Rectangle spriteDest = {
         center.x, center.y,
-        sprite->width*spriteScale, sprite->height*spriteScale
+        sprite->width*scale, sprite->height*scale
     };
     Vector2 spriteOrigin = {
-        sprite->width/2*spriteScale,
-        sprite->height/2*spriteScale };
+        sprite->width/2*scale,
+        sprite->height/2*scale };
 
-    DrawTexturePro(*sprite, spriteSrc, spriteDest, spriteOrigin, angle, WHITE);
+    DrawTexturePro(*sprite, src, spriteDest, spriteOrigin, angle, WHITE);
 }

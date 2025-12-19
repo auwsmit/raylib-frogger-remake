@@ -7,8 +7,8 @@
 // Macros
 // ----------------------------------------------------------------------------
 #define GRID_RES_X 16 // playable game grid resolution
-#define GRID_RES_Y 14
-#define GRID_UNIT 40.0f // size of a grid square
+#define GRID_RES_Y 16
+#define GRID_UNIT 38.0f // size of a grid square
 #define GRID_WIDTH (GRID_UNIT*GRID_RES_X)
 #define GRID_HEIGHT (GRID_UNIT*GRID_RES_Y)
 
@@ -21,18 +21,10 @@ typedef enum {
     SCREEN_LOGO, SCREEN_TITLE, SCREEN_GAMEPLAY
 } ScreenState;
 
-// typedef struct GameSounds {
-//     Sound menu;
-// } GameSounds;
-
-// typedef struct GameTextures {
-//     Texture ship;
-// } GameTextures;
-
 typedef enum {
     ENTITY_TYPE_FROG,
     ENTITY_TYPE_CAR,
-    ENTITY_TYPE_LILYPAD,
+    ENTITY_TYPE_TURTLE,
     ENTITY_TYPE_LOG,
     ENTITY_TYPE_WALL,
     ENTITY_TYPE_WIN,
@@ -52,13 +44,29 @@ typedef enum {
 } EntityMoveDirection;
 
 typedef struct {
-    Rectangle rec;
+    Sound menu;
+} GameSounds;
+
+typedef struct {
+    Texture atlas;
+    Rectangle car;
+    Rectangle frog;
+    Rectangle dead;
+    Rectangle turtle;
+    Rectangle win;
+    Rectangle log;
+} GameTextures;
+
+typedef struct {
+    Rectangle rec, sprite;
+    Vector2 spriteOffset;
     Vector2 position;
     Vector2 seekPos;
     Vector2 bufferPos;
     Color color;
     float speed;
     float radius;
+    float angle;
     float platformMove;
     EntityType type;
     EntityFlags flags;
@@ -88,19 +96,19 @@ typedef struct {
     // ----------------------------------------------------------------------------
     RaylibAssets assets;
     // GameSounds sounds;
-    // GameTextures textures;
+    GameTextures textures;
 
     int winCount;
     struct {
         Rectangle water;
         Rectangle grassTop, grassBottom;
-        // Rectangle road;
     } background;
 
     Entity *entities;
     Entity *frog; // pointer to frog for convenience
     float deathTimer;
-    float messageTimer;
+    float turtleTimer;
+    float turtleTextureOffset;
 
     Vector2 grid[GRID_RES_X*GRID_RES_Y];
     Vector2 gridStart;
@@ -118,7 +126,6 @@ void CreateRow(EntityType type, int row, char *pattern, float speed); // create 
                                                                       // pattern:
                                                                       // _ full unit space
                                                                       // . half unit space
-                                                                      // o half width
                                                                       // O full width
 void FreeGameState(void);
 

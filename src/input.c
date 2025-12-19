@@ -88,7 +88,7 @@ void AddInputActionGamepadButton(InputAction action, GamepadButton button)
 void UpdateInputFrame(void)
 {
     ProcessUserInput(INPUT_POLL_ALL);
-    if (input.cancelTime > EPSILON)
+    if (input.cancelTime > 0)
     {
         input.cancelTime -= game.frameTime;
         input.mouse.moved = false;
@@ -118,7 +118,7 @@ void ProcessUserInput(InputPollFlag pollType)
         input.mouse.gamePosition = GetScreenToWorld2D(gameMousePos, game.camera);
         input.mouse.uiPosition   = GetScreenToWorld2D(mousePos, ui.camera);
         input.mouse.delta        = Vector2Scale(GetMouseDelta(), 1.0f/game.camera.zoom);
-        input.mouse.moved        = (Vector2Length(input.mouse.delta) > EPSILON);
+        input.mouse.moved        = (Vector2Length(input.mouse.delta) > 0);
         input.mouse.leftPressed  = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
         input.mouse.leftDown     = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
         input.mouse.rightPressed = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);

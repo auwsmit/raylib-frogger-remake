@@ -66,7 +66,7 @@ void UiCallbackSetVolume(float setValue, void *slider)
     UiSlider *s = (UiSlider*)slider;
     setValue = Clamp(setValue, s->min, s->max);
     SetMasterVolume(setValue);
-    if (ui.actionCooldownTimer < EPSILON)
+    if (ui.actionCooldownTimer < 0)
     {
         ui.actionCooldownTimer = cooldownTime;
         PlaySound(ui.sounds.menu);
@@ -86,7 +86,7 @@ void UiCallbackSetRenderScale(float setValue, void *slider)
     setValue = roundf(setValue/s->increment)*s->increment;
     if (setValue == s->getValue()) return; // don't update if value is unchanged
 
-    if (ui.actionCooldownTimer < EPSILON)
+    if (ui.actionCooldownTimer < 0)
     {
         ui.actionCooldownTimer = cooldownTime;
         render.resScale = setValue;

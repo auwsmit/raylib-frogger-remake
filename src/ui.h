@@ -72,6 +72,14 @@ typedef struct {
 } UiSounds;
 
 typedef struct {
+    Texture atlas;
+    Rectangle analogBase;
+    Rectangle analogStick;
+    Rectangle dpad;
+    Rectangle pause;
+} UiTextures;
+
+typedef struct {
     Color color;
     Vector2 position;
     int fontSize;
@@ -79,7 +87,7 @@ typedef struct {
 } UiText;
 
 typedef struct {
-    Texture texture;
+    Texture sprite;
     Rectangle rec;
     Vector2 position;
     Vector2 growPos;
@@ -88,7 +96,7 @@ typedef struct {
 } UiCheckbox;
 
 typedef struct {
-    Texture texture;
+    Texture sprite;
     Rectangle rec;
     float min, max;
     float increment;
@@ -98,12 +106,12 @@ typedef struct {
 } UiSlider;
 
 typedef struct {
-    Texture texture;
+    Texture *sprite;
     Vector2 position;
     Vector2 growPos;
-    Rectangle rec;
+    Rectangle rec, spriteRec;
     Color color;
-    float textureScale;
+    float spriteScale;
     float width, height;
     float radius;
     UiActionFunc onClick;
@@ -126,7 +134,8 @@ typedef struct {
 } UiMenu;
 
 typedef struct {
-    Texture textureBase,  textureNub;
+    Texture *sprite;
+    Rectangle spriteBaseRec,  spriteStickRec;
     Vector2 centerPos,    stickPos;
     float   centerRadius, stickRadius;
     int lastTouchId;
@@ -134,15 +143,17 @@ typedef struct {
     bool enabled;
 } UiAnalogStick;
 
-typedef enum { UI_DPAD_UP, UI_DPAD_DOWN, UI_DPAD_LEFT, UI_DPAD_RIGHT } UiDPadDirections;
+typedef enum {
+    UI_DPAD_UP, UI_DPAD_DOWN, UI_DPAD_LEFT, UI_DPAD_RIGHT
+} UiDPadDirections;
 
 typedef struct {
-    Texture texture;
+    Texture *sprite;
     Rectangle button[4]; // up, down, left, right
-    Rectangle rec; // for drawing dpad sprite
+    Rectangle rec, spriteRec;
     Vector2 position;
     float width;
-    float textureScale;
+    float spriteScale;
     int inputActionId[4];
     bool clicked[4];
     bool enabled;
@@ -158,6 +169,7 @@ typedef struct {
     // Primary data
     Arena arena;
     RaylibAssets assets;
+    UiTextures textures;
     UiSounds sounds;
     Camera2D camera;
     UiMenu menus[UI_MENU_AMOUNT];

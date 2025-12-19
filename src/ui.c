@@ -77,16 +77,32 @@ void InitUiState(void)
     // Sound assets
     ui.sounds.menu =  LoadSoundAsset(&ui.assets, "assets/audio/menu_beep.wav");
 
+    // Textures
+    ui.textures.atlas       = LoadTextureAsset(&ui.assets, "assets/textures/controls.png");
+    ui.textures.analogBase  = (Rectangle){   0.5f,   0, 256, 256 };
+    ui.textures.analogStick = (Rectangle){   0.5f, 256, 128, 128 };
+    ui.textures.pause       = (Rectangle){ 128.5f, 256, 128, 128 };
+    ui.textures.dpad        = (Rectangle){ 256.5f,   0, 256, 256 };
+    // ui.textures.a           = (Rectangle){ 256.5f, 256, 128, 128 };
+    // ui.textures.b           = (Rectangle){ 384.5f, 256, 128, 128 };
+    // ui.textures.x           = (Rectangle){   0.5f, 384, 128, 128 };
+    // ui.textures.y           = (Rectangle){ 128.5f, 384, 128, 128 };
+
     // Touch input buttons (virtual gamepad)
     // ----------------------------------------------------------------------------
     // Analog stick
     ui.gamepad.stick = (UiAnalogStick){
+        .sprite = &ui.textures.atlas,
+        .spriteBaseRec = ui.textures.analogBase,
+        .spriteStickRec = ui.textures.analogStick,
         .lastTouchId = -1,
         .enabled = false,
     };
 
     // D-Pad
     ui.gamepad.dpad = (UiDPad){
+        .sprite = &ui.textures.atlas,
+        .spriteRec = ui.textures.dpad,
         .inputActionId[UI_DPAD_UP] = INPUT_ACTION_UP,
         .inputActionId[UI_DPAD_DOWN] = INPUT_ACTION_DOWN,
         .inputActionId[UI_DPAD_LEFT] = INPUT_ACTION_LEFT,
@@ -96,16 +112,13 @@ void InitUiState(void)
 
     // Pause button
     ui.gamepad.pause = (UiButton){
+        .sprite = &ui.textures.atlas,
+        .spriteRec = ui.textures.pause,
         .text = "Pause",
-        .textureScale = 1.333f,
+        .spriteScale = 1.333f,
         .inputActionId = INPUT_ACTION_PAUSE,
         .color = RAYWHITE
     };
-
-    ui.gamepad.stick.textureBase = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_base.png");
-    ui.gamepad.stick.textureNub  = LoadTextureAsset(&ui.assets, "assets/textures/analog_stick_nub.png");
-    ui.gamepad.dpad.texture      = LoadTextureAsset(&ui.assets, "assets/textures/dpad.png");
-    ui.gamepad.pause.texture     = LoadTextureAsset(&ui.assets, "assets/textures/button_pause.png");
 
     UpdateUiGamepadRender();
 }
@@ -200,7 +213,7 @@ UiButton InitUiInputButton(char *text, int inputActionId, float x, float y, floa
 {
     UiButton button = {
         .text = text,
-        .textureScale = 1.333f,
+        .spriteScale = 1.333f,
         .radius = radius,
         .inputActionId = inputActionId,
         .position = { x, y },
@@ -312,7 +325,7 @@ void UpdateUiFrame(void)
         fadeIncrement *= -1;
 
     // Update timers
-    if (ui.actionCooldownTimer > EPSILON) ui.actionCooldownTimer -= game.frameTime;
+    if (ui.actionCooldownTimer > 0) ui.actionCooldownTimer -= game.frameTime;
 
     ui.textFade += fadeIncrement;
 
@@ -346,7 +359,7 @@ void UpdateUiFrame(void)
         settingsText->color = Fade(RAYWHITE, ui.textFade);
     }
     // Update message timer when unpaused
-    else if (ui.messageTimer > EPSILON) ui.messageTimer -= game.frameTime;
+    else if (ui.messageTimer > 0) ui.messageTimer -= game.frameTime;
 
 }
 
@@ -671,8 +684,7 @@ void DrawUiFrame(void)
 void DrawUiGamepad(void)
 {
     if (input.touchMode &&
-        ui.currentMenu == UI_MENU_NONE &&
-        game.currentScreen == SCREEN_GAMEPLAY)
+        ui.currentMenu == UI_MENU_NONE && game.currentScreen == SCREEN_GAMEPLAY)
     {
         // Touch screen input controls
         DrawUiInputButton(&ui.gamepad.pause);
@@ -770,7 +782,7 @@ void DrawUiInputButton(UiButton *button)
     // else
     //     buttonColor = ColorAlpha(buttonColor, UI_TRANSPARENCY);
     // DrawCircleV(button->position, button->radius, buttonColor);
-    DrawSpriteCircle(&button->texture, button->position, button->radius, 0, button->textureScale);
+    DrawSpriteOnCircle(button->sprite, button->spriteRec, button->position, button->radius, 0, button->spriteScale);
 }
 
 void DrawUiDPad(UiDPad *dpad)
@@ -785,17 +797,18 @@ void DrawUiDPad(UiDPad *dpad)
 
     //     DrawRectangleRec(dpad->button[i], buttonColor);
     // }
-    DrawSpriteRectangle(&dpad->texture, dpad->rec, 0);
+    DrawSpriteOnRectangle(dpad->sprite, dpad->spriteRec, dpad->rec, 0);
+    // DrawTexturePro(ui.textures.atlas, dpad->spriteRec, dpad->rec, Vector2Zero(), 0, WHITE);
 }
 
 void DrawUiAnalogStick(UiAnalogStick *stick)
 {
     // DrawCircleV(stick->centerPos, stick->centerRadius, ColorAlpha(RAYWHITE, UI_TRANSPARENCY));
-    DrawSpriteCircle(&stick->textureBase, stick->centerPos, stick->centerRadius, 0, 1.0f);
+    DrawSpriteOnCircle(stick->sprite, stick->spriteBaseRec, stick->centerPos, stick->centerRadius, 0, 1.0f);
     // DrawRing(stick->centerPos, stick->centerRadius - 4, stick->centerRadius + 4,
     //          0, 360, 0, RAYWHITE);
     // DrawCircleV(stick->stickPos, stick->stickRadius, GRAY);
-    DrawSpriteCircle(&stick->textureNub, stick->stickPos, stick->stickRadius, 0, 1.0f);
+    DrawSpriteOnCircle(stick->sprite, stick->spriteStickRec, stick->stickPos, stick->stickRadius, 0, 1.0f);
 }
 
 void DrawDebugInfo(void)
