@@ -358,8 +358,8 @@ bool IsInputActionAxisDown(InputAction action)
 
 bool IsInputActionMouseDown(InputAction action)
 {
-    if (input.touchMode)
-        return false;
+    // if (input.touchMode)
+    //     return false;
 
     MouseButton* mb = inputMaps.mouse[action];
     for (int i = 0; i < INPUT_MAX_MAPS && mb[i] != 0; i++)

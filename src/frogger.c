@@ -581,13 +581,13 @@ void DrawGameFrame(void)
                 sprite.y += e->spriteOffset.y;
             }
 
-            DrawSpriteOnCircle(&game.textures.atlas, sprite, e->position, e->radius, angle, 1.0f);
+            DrawSpriteOnCircle(&game.textures.atlas, sprite, e->position, GRID_UNIT/2, angle);
             if (e->isWrapping)
             {
                 Vector2 wrapLeftPos = { e->position.x + GRID_WIDTH, e->position.y };
                 Vector2 wrapRightPos = { e->position.x - GRID_WIDTH, e->position.y };
-                DrawSpriteOnCircle(&game.textures.atlas, sprite, wrapLeftPos, e->radius, angle, 1.0f);
-                DrawSpriteOnCircle(&game.textures.atlas, sprite, wrapRightPos, e->radius, angle, 1.0f);
+                DrawSpriteOnCircle(&game.textures.atlas, sprite, wrapLeftPos, GRID_UNIT/2, angle);
+                DrawSpriteOnCircle(&game.textures.atlas, sprite, wrapRightPos, GRID_UNIT/2, angle);
             }
         }
     }

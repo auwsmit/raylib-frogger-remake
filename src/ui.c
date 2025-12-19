@@ -782,7 +782,7 @@ void DrawUiInputButton(UiButton *button)
     // else
     //     buttonColor = ColorAlpha(buttonColor, UI_TRANSPARENCY);
     // DrawCircleV(button->position, button->radius, buttonColor);
-    DrawSpriteOnCircle(button->sprite, button->spriteRec, button->position, button->radius, 0, button->spriteScale);
+    DrawSpriteOnCircle(button->sprite, button->spriteRec, button->position, button->radius, 0);
 }
 
 void DrawUiDPad(UiDPad *dpad)
@@ -804,11 +804,11 @@ void DrawUiDPad(UiDPad *dpad)
 void DrawUiAnalogStick(UiAnalogStick *stick)
 {
     // DrawCircleV(stick->centerPos, stick->centerRadius, ColorAlpha(RAYWHITE, UI_TRANSPARENCY));
-    DrawSpriteOnCircle(stick->sprite, stick->spriteBaseRec, stick->centerPos, stick->centerRadius, 0, 1.0f);
+    DrawSpriteOnCircle(stick->sprite, stick->spriteBaseRec, stick->centerPos, stick->centerRadius, 0);
     // DrawRing(stick->centerPos, stick->centerRadius - 4, stick->centerRadius + 4,
     //          0, 360, 0, RAYWHITE);
     // DrawCircleV(stick->stickPos, stick->stickRadius, GRAY);
-    DrawSpriteOnCircle(stick->sprite, stick->spriteStickRec, stick->stickPos, stick->stickRadius, 0, 1.0f);
+    DrawSpriteOnCircle(stick->sprite, stick->spriteStickRec, stick->stickPos, stick->stickRadius, 0);
 }
 
 void DrawDebugInfo(void)

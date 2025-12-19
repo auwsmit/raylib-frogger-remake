@@ -38,17 +38,14 @@ void DrawSpriteOnRectangle(Texture *sprite, Rectangle src, Rectangle rect, float
     DrawTexturePro(*sprite, src, rect, Vector2Zero(), angle, WHITE);
 }
 
-void DrawSpriteOnCircle(Texture *sprite, Rectangle src, Vector2 center, float radius,
-                      float angle, float spriteScale)
+void DrawSpriteOnCircle(Texture *sprite, Rectangle src,
+                        Vector2 center, float radius, float angle)
 {
-    float scale = radius*2.0f/sprite->width*spriteScale;
     Rectangle spriteDest = {
         center.x, center.y,
-        sprite->width*scale, sprite->height*scale
+        radius*2, radius*2
     };
-    Vector2 spriteOrigin = {
-        sprite->width/2*scale,
-        sprite->height/2*scale };
+    Vector2 spriteOrigin = { radius, radius };
 
     DrawTexturePro(*sprite, src, spriteDest, spriteOrigin, angle, WHITE);
 }
