@@ -66,7 +66,7 @@ void UiCallbackSetVolume(float setValue, void *slider)
     UiSlider *s = (UiSlider*)slider;
     setValue = Clamp(setValue, s->min, s->max);
     SetMasterVolume(setValue);
-    if (ui.actionCooldownTimer < 0)
+    if (ui.actionCooldownTimer < EPSILON)
     {
         ui.actionCooldownTimer = cooldownTime;
         PlaySound(ui.sounds.menu);
@@ -75,7 +75,7 @@ void UiCallbackSetVolume(float setValue, void *slider)
 
 float UiCallbackGetRenderScale(void)
 {
-    return render.resScale;
+    return viewport.resScale;
 }
 
 void UiCallbackSetRenderScale(float setValue, void *slider)
@@ -86,35 +86,35 @@ void UiCallbackSetRenderScale(float setValue, void *slider)
     setValue = roundf(setValue/s->increment)*s->increment;
     if (setValue == s->getValue()) return; // don't update if value is unchanged
 
-    if (ui.actionCooldownTimer < 0)
+    if (ui.actionCooldownTimer < EPSILON)
     {
         ui.actionCooldownTimer = cooldownTime;
-        render.resScale = setValue;
+        viewport.resScale = setValue;
     }
     InitRenderTexture();
-    game.camera.offset = (Vector2){ render.renderTexWidth/2, render.renderTexHeight/2 };
-    game.camera.zoom = render.renderTexHeight/VIRTUAL_HEIGHT;
+    game.camera.offset = (Vector2){ viewport.renderTexWidth/2, viewport.renderTexHeight/2 };
+    game.camera.zoom = viewport.renderTexHeight/VIRTUAL_HEIGHT;
 }
 
 // bool UiCallbackCheckShader(void)
 // {
-//     return render.shaderEnabled;
+//     return viewport.shaderEnabled;
 // }
 
 // void UiCallbackToggleShader(void)
 // {
-//     render.shaderEnabled = !render.shaderEnabled;
+//     viewport.shaderEnabled = !viewport.shaderEnabled;
 // }
 
 // float UiCallbackGetPixelSize(void)
 // {
-//     return render.pixelSize;
+//     return viewport.pixelSize;
 // }
 
 // void UiCallbackSetPixelSize(float setValue, float min, float max)
 // {
 //     setValue = Clamp(setValue, min, max);
-//     render.pixelSize = (int)setValue;
-//     SetShaderValue(render.shader, render.shaderPixelWidthLoc, &render.pixelSize, SHADER_UNIFORM_FLOAT);
-//     SetShaderValue(render.shader, render.shaderPixelHeightLoc, &render.pixelSize, SHADER_UNIFORM_FLOAT);
+//     viewport.pixelSize = (int)setValue;
+//     SetShaderValue(viewport.shader, viewport.shaderPixelWidthLoc, &viewport.pixelSize, SHADER_UNIFORM_FLOAT);
+//     SetShaderValue(viewport.shader, viewport.shaderPixelHeightLoc, &viewport.pixelSize, SHADER_UNIFORM_FLOAT);
 // }

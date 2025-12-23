@@ -29,7 +29,7 @@
 GameState  game;
 InputState input;
 UiState    ui;
-RenderData render;
+RenderData viewport;
 
 // Local Functions Declaration
 void UpdateDrawFrame(void); // main game loop
@@ -48,7 +48,7 @@ int main(void)
     SetWindowMinSize(320, 240);
     InitAudioDevice();
 
-    InitWindowRender();
+    InitViewport();
     InitRaylibLogo();
     InitUiState();
     InitGameState();
@@ -67,8 +67,8 @@ int main(void)
     FreeGameState();
     FreeUiState();
     CloseAudioDevice();
-    UnloadShader(render.shader);
-    UnloadRenderTexture(render.renderTarget);
+    UnloadShader(viewport.shader);
+    UnloadRenderTexture(viewport.renderTarget);
     CloseWindow(); // close window and OpenGL context
 
     return 0;
@@ -93,7 +93,7 @@ void UpdateDrawFrame(void)
     // Debug:
     if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_S))
     {
-        render.shaderEnabled = !render.shaderEnabled;
+        viewport.shaderEnabled = !viewport.shaderEnabled;
         CancelInputActions();
     }
 
@@ -122,7 +122,7 @@ void UpdateDrawFrame(void)
     // ----------------------------------------------------------------------------
 
     // Draw to render texture
-    BeginTextureMode(render.renderTarget);
+    BeginTextureMode(viewport.renderTarget);
         BeginMode2D(game.camera);
 
             switch(game.currentScreen)
@@ -143,21 +143,21 @@ void UpdateDrawFrame(void)
     BeginDrawing();
         ClearBackground(BLACK);
         // Draw full-screen shader effect
-        if (render.shaderEnabled) BeginShaderMode(render.shader);
+        if (viewport.shaderEnabled) BeginShaderMode(viewport.shader);
 
-            DrawTexturePro(render.renderTarget.texture,
+            DrawTexturePro(viewport.renderTarget.texture,
                            (Rectangle){ 0, 0,
-                           (float)render.renderTarget.texture.width,
-                           (float)-render.renderTarget.texture.height },
-                           (Rectangle){ render.x, render.y,
-                           render.width, render.height },
+                           (float)viewport.renderTarget.texture.width,
+                           (float)-viewport.renderTarget.texture.height },
+                           (Rectangle){ viewport.x, viewport.y,
+                           viewport.width, viewport.height },
                            Vector2Zero(), 0, WHITE);
 
-        if (render.shaderEnabled) EndShaderMode();
+        if (viewport.shaderEnabled) EndShaderMode();
 
         // Draw UI above render texture
-        BeginScissorMode((int)render.x, // draw within aspect ratio
-                         (int)render.y, (int)render.width, (int)render.height);
+        BeginScissorMode((int)viewport.x, // draw within aspect ratio
+                         (int)viewport.y, (int)viewport.width, (int)viewport.height);
         BeginMode2D(ui.camera);
 
             switch(game.currentScreen)

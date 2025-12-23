@@ -51,9 +51,11 @@ typedef struct {
     Texture atlas;
     Rectangle car;
     Rectangle frog;
+    Rectangle grassPurple;
+    Rectangle grassGreen;
     Rectangle dead;
     Rectangle turtle;
-    Rectangle win;
+    Rectangle winFrog;
     Rectangle log;
 } GameTextures;
 
@@ -94,21 +96,22 @@ typedef struct {
 
     // Frogger data
     // ----------------------------------------------------------------------------
-    RaylibAssets assets;
-    // GameSounds sounds;
-    GameTextures textures;
-
-    int winCount;
     struct {
         Rectangle water;
         Rectangle grassTop, grassBottom;
     } background;
 
+    RaylibAssets assets;
+    // GameSounds sounds;
+    GameTextures textures;
+
     Entity *entities;
     Entity *frog; // pointer to frog for convenience
+    int winCount;
+    int lives;
     float deathTimer;
-    float turtleTimer;
-    float turtleTextureOffset;
+    float animateTimer;
+    float animateTextureOffset;
 
     Vector2 grid[GRID_RES_X*GRID_RES_Y];
     Vector2 gridStart;
@@ -134,9 +137,10 @@ void UpdateGameFrame(void); // Updates all the game's data and objects for the c
 void UpdateFrog(Entity *frog);
 void UpdateHostile(Entity *hostile);
 void UpdatePlatform(Entity *platform);
-void UpdateWinZone(Entity *box);
+void UpdateWinZone(Entity *zone);
 void MoveEntity(Entity *e);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
+void DrawGrass(Rectangle grassRec);
 
 // Misc
 Vector2 GetGridPosition(int row, int col);

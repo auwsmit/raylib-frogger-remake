@@ -12,8 +12,10 @@ void InitGameState(void)
 
         // Center camera
         .camera.target = (Vector2){ VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2 },
-        .camera.offset = (Vector2){ render.renderTexWidth/2, render.renderTexHeight/2 },
-        .camera.zoom = render.renderTexHeight/VIRTUAL_HEIGHT,
+        .camera.offset = (Vector2){ viewport.renderTexWidth/2, viewport.renderTexHeight/2 },
+        .camera.zoom = viewport.renderTexHeight/VIRTUAL_HEIGHT,
+
+        .lives = 3,
 
         .isDebugMode = DEBUG_DEFAULT
     };
@@ -40,12 +42,15 @@ void InitGameState(void)
     // Textures
     game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
     SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
-    game.textures.car    = (Rectangle){ 48,   0, 16, 16 };
-    game.textures.frog   = (Rectangle){  0,   0, 16, 16 };
-    game.textures.dead   = (Rectangle){  0,  48, 16, 16 };
-    game.textures.turtle = (Rectangle){  0,  80, 16, 16 };
-    game.textures.win    = (Rectangle){ 48,  96, 16, 16 };
-    game.textures.log    = (Rectangle){ 96, 128, 16, 16 };
+    const int tSize = 16;
+    game.textures.car         = (Rectangle){ 48,   0, tSize, tSize };
+    game.textures.frog        = (Rectangle){  0,   0, tSize, tSize };
+    game.textures.grassPurple = (Rectangle){ 48,  32, tSize, tSize };
+    game.textures.grassGreen  = (Rectangle){ 64,  24, tSize, tSize };
+    game.textures.dead        = (Rectangle){ 48,  48, tSize, tSize };
+    game.textures.turtle      = (Rectangle){  0,  80, tSize, tSize };
+    game.textures.winFrog         = (Rectangle){ 48,  96, tSize, tSize };
+    game.textures.log         = (Rectangle){ 96, 128, tSize, tSize };
 
     // Create entities
     // ----------------------------------------------------------------------------
@@ -99,12 +104,12 @@ void InitGameState(void)
     game.background.grassBottom.x = game.gridStart.x;
     game.background.grassBottom.y = GetGridPosition(0, 14).y;
     game.background.grassBottom.width = GRID_WIDTH;
-    game.background.grassBottom.height = GRID_UNIT*2;
+    game.background.grassBottom.height = GRID_UNIT;
 }
 
 void CreateRow(EntityType type, int row, char *pattern, float speed)
 {
-    Color logColor = ColorBrightness(BROWN, 0.0f - (float)row*0.10f);
+
     float carTextureOffsets[5] = {
         32, // truck
         80, // racer 1
@@ -115,20 +120,20 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
     float carTextureSizes[5] = { 32, 16, 16, 16, 16 };
     int spriteIdx = row - 9;
     Vector2 currentPos = GetGridPosition(0, row);
-    float widthExtend = 0;
+    float entityWidth = GRID_UNIT;
+    bool isLeftWall = false;
     bool isExtending = false;
 
     for (char *c = pattern; *c != '\0'; c++)
     {
-        if (*c == 'O') widthExtend = GRID_UNIT;
         if (*c == '.') currentPos.x += GRID_UNIT/2;
         if (*c == '_') currentPos.x += GRID_UNIT;
 
         if (*c == '_' || *c == '.') isExtending = false;
         if (isExtending)
         {
-            arrlast(game.entities).rec.width += widthExtend;
-            currentPos.x += widthExtend;
+            arrlast(game.entities).rec.width += entityWidth;
+            currentPos.x += entityWidth;
         }
 
         if (*c == '_' || *c == '.' || isExtending)
@@ -139,8 +144,8 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         e.speed = speed;
         e.rec.x = currentPos.x;
         e.rec.y = currentPos.y;
-        e.rec.width = widthExtend;
-        currentPos.x += widthExtend;
+        e.rec.width = entityWidth;
+        currentPos.x += entityWidth;
         e.rec.height = GRID_UNIT;
 
         isExtending = true;
@@ -148,10 +153,6 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         {
             e.sprite = game.textures.turtle;
             e.flags = ENTITY_FLAG_MOVE | ENTITY_FLAG_PLATFORM;
-            e.radius = GRID_UNIT/2; //TEMP until sprites
-            e.position.x = e.rec.x + e.radius; //TEMP until sprites
-            e.position.y = e.rec.y + e.radius;
-            e.color = ColorBrightness(MAROON, -0.4f);
             isExtending = false;
         }
 
@@ -159,7 +160,6 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         {
             e.sprite = game.textures.log;
             e.flags = ENTITY_FLAG_MOVE | ENTITY_FLAG_PLATFORM;
-            e.color = logColor;
         }
 
         if (type == ENTITY_TYPE_CAR)
@@ -172,13 +172,21 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
 
         if (type == ENTITY_TYPE_WALL)
         {
+            e.sprite = game.textures.grassGreen;
+            e.sprite.height += 8;
+            if (isLeftWall)
+                e.spriteOffset.x = 32;
+            isLeftWall = !isLeftWall;
             e.flags = ENTITY_FLAG_KILL;
+            e.rec.height += GRID_UNIT/2;
+            e.rec.y -= GRID_UNIT/2;
             e.color = DARKGREEN;
+            isExtending = false;
         }
 
         if (type == ENTITY_TYPE_WIN)
         {
-            e.sprite = game.textures.win;
+            e.sprite = game.textures.winFrog;
             e.position.x = e.rec.x + GRID_UNIT/2; //TEMP until sprites
             e.position.y = e.rec.y + GRID_UNIT/2;
             game.winCount++;
@@ -257,14 +265,14 @@ void UpdateGameFrame(void)
             }
         }
 
-        if (game.turtleTimer > 0)
+        if (game.animateTimer > 0)
         {
-            game.turtleTimer -= game.frameTime;
+            game.animateTimer -= game.frameTime;
         }
         else
         {
-            game.turtleTimer = 0.3333f;
-            game.turtleTextureOffset = fmodf(game.turtleTextureOffset + game.textures.turtle.width, 48.0f);
+            game.animateTimer = 0.3333f;
+            game.animateTextureOffset = fmodf(game.animateTextureOffset + game.textures.turtle.width, 48.0f);
         }
     }
     // Prevent input after resuming pause
@@ -396,7 +404,11 @@ void UpdateFrog(Entity *frog)
         frog->position = newPos;
 
         // set sprite
-        frog->spriteOffset.x = 0;
+        float distFromDest = Vector2Length(Vector2Subtract(frog->position, frog->seekPos));
+        if (distFromDest < GRID_UNIT*0.2f)
+            frog->spriteOffset.x = 32; // not hopping
+        else
+            frog->spriteOffset.x = 0; // hopping
 
         if (moveDelta.x > 0) frog->angle = 270;
         if (moveDelta.x < 0) frog->angle = 90;
@@ -438,17 +450,14 @@ void UpdatePlatform(Entity *platform)
     {
         game.frog->platformMove = platform->speed;
     }
-
-    platform->position.x = platform->rec.x + platform->radius; //TEMP until sprites
-    platform->position.y = platform->rec.y + platform->radius;
 }
 
-void UpdateWinZone(Entity *box)
+void UpdateWinZone(Entity *zone)
 {
-    if (!box->isWin && CheckCollisionPointRec(game.frog->position, box->rec))
+    if (!zone->isWin && CheckCollisionPointRec(game.frog->position, zone->rec))
     {
-        box->isWin = true;
-        box->flags |= ENTITY_FLAG_KILL;
+        zone->isWin = true;
+        zone->flags |= ENTITY_FLAG_KILL;
         game.winCount--;
         game.frog->isWin = false;
         game.frog->position = game.spawnPos;
@@ -477,13 +486,14 @@ void MoveEntity(Entity *e)
 
 void DrawGameFrame(void)
 {
-    ClearBackground(DARKGRAY);
+    ClearBackground(ColorBrightness(DARKGRAY, -0.8f));
 
     // Draw background elements
     // ----------------------------------------------------------------------------
     DrawRectangleRec(game.background.water, ColorBrightness(DARKBLUE, -0.5f));
-    DrawRectangleRec(game.background.grassTop, DARKPURPLE);
-    DrawRectangleRec(game.background.grassBottom, DARKPURPLE);
+    DrawGrass(game.background.grassTop);
+    DrawGrass(game.background.grassBottom);
+
 
     // Draw entities
     // ----------------------------------------------------------------------------
@@ -494,7 +504,11 @@ void DrawGameFrame(void)
         // Platforms
         if (e->type == ENTITY_TYPE_WALL)
         {
-            DrawRectangleRec(e->rec, e->color);
+            Rectangle sprite = e->sprite;
+            sprite.x += e->spriteOffset.x;
+            sprite.y += e->spriteOffset.y;
+            DrawRectangleRec(sprite, e->color);
+            DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
             if (e->isWrapping)
             {
                 DrawRectangleV((Vector2){ e->rec.x + GRID_WIDTH, e->rec.y },
@@ -505,11 +519,17 @@ void DrawGameFrame(void)
         }
 
         // Win zones
-        if (e->type == ENTITY_TYPE_WIN && e->isWin)
+        if (e->type == ENTITY_TYPE_WIN)
         {
             // DrawRectangleRec(e->rec, e->color);
             // DrawCircleV(e->position, game.frog->radius, game.frog->color);
-            DrawSpriteOnRectangle(&game.textures.atlas, e->sprite, e->rec, e->angle);
+            Rectangle topGrass = game.textures.grassGreen;
+            topGrass.x += 16;
+            Rectangle grassRec = e->rec;
+            grassRec.y -= GRID_UNIT/2;
+            DrawSpriteOnRectangle(&game.textures.atlas, topGrass, grassRec, e->angle);
+            if (e->isWin)
+                DrawSpriteOnRectangle(&game.textures.atlas, e->sprite, e->rec, e->angle);
         }
 
         if (e->type == ENTITY_TYPE_CAR || e->type == ENTITY_TYPE_TURTLE)
@@ -517,7 +537,7 @@ void DrawGameFrame(void)
             Rectangle sprite = e->sprite;
             if (e->type == ENTITY_TYPE_TURTLE)
             {
-                sprite.x += game.turtleTextureOffset;
+                sprite.x += game.animateTextureOffset;
             }
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
             if (e->isWrapping)
@@ -607,6 +627,18 @@ void DrawGameFrame(void)
     DrawRectangleV((Vector2){ game.gridStart.x, (game.gridStart.y + GRID_HEIGHT - GRID_UNIT) },
                    (Vector2){ GRID_WIDTH, (VIRTUAL_HEIGHT + GRID_UNIT - (game.gridStart.y + GRID_HEIGHT)) },
                    BLACK);
+}
+
+void DrawGrass(Rectangle grassRec)
+{
+    int tileAmount = (int)(grassRec.width/GRID_UNIT);
+    grassRec.width = GRID_UNIT + 0.1f;
+
+    for (int i = 0; i < tileAmount; i++)
+    {
+        DrawTexturePro(game.textures.atlas, game.textures.grassPurple, grassRec, Vector2Zero(), 0, WHITE);
+        grassRec.x += GRID_UNIT;
+    }
 }
 
 Vector2 GetGridPosition(int col, int row)

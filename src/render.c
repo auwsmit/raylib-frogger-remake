@@ -1,40 +1,40 @@
 // EXPLANATION:
-// To render the game window and screen shader(s)
+// To render the game viewport and screen shader(s)
 
-void InitWindowRender(void)
+void InitViewport(void)
 {
-    render = (RenderData){ .resScale = 1 + 1.0f/3.0f }; // means 1440p default
+    viewport = (RenderData){ .resScale = 1 + 1.0f/3.0f }; // means 1440p default
     InitRenderTexture();
     InitScreenShader();
 }
 
 void InitRenderTexture(void)
 {
-    if (IsRenderTextureValid(render.renderTarget))
-        UnloadRenderTexture(render.renderTarget);
+    if (IsRenderTextureValid(viewport.renderTarget))
+        UnloadRenderTexture(viewport.renderTarget);
 
     // Render texture, for setting a desired render resolution
-    render.renderTexWidth = (float)BASE_RENDER_WIDTH*render.resScale;
-    render.renderTexHeight = (float)BASE_RENDER_HEIGHT*render.resScale;
-    render.renderTarget = LoadRenderTexture((int)render.renderTexWidth,
-                                            (int)render.renderTexHeight);
-    SetTextureFilter(render.renderTarget.texture, TEXTURE_FILTER_BILINEAR);
+    viewport.renderTexWidth = (float)BASE_RENDER_WIDTH*viewport.resScale;
+    viewport.renderTexHeight = (float)BASE_RENDER_HEIGHT*viewport.resScale;
+    viewport.renderTarget = LoadRenderTexture((int)viewport.renderTexWidth,
+                                            (int)viewport.renderTexHeight);
+    SetTextureFilter(viewport.renderTarget.texture, TEXTURE_FILTER_BILINEAR);
 }
 
 void InitScreenShader(void)
 {
     // Init shader
-    // render.shader = LoadShader(0, TextFormat("assets/shaders/pixel%i.fs", GLSL_VERSION));
-    // render.shaderRenderWidthLoc = GetShaderLocation(render.shader, "renderWidth");
-    // render.shaderRenderHeightLoc = GetShaderLocation(render.shader, "renderHeight");
-    // render.shaderPixelWidthLoc = GetShaderLocation(render.shader, "pixelWidth");
-    // render.shaderPixelHeightLoc = GetShaderLocation(render.shader, "pixelHeight");
-    // render.pixelSize = SHADER_PIXEL_SIZE;
-    // SetShaderValue(render.shader, render.shaderRenderWidthLoc, &render.renderTexWidth, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(render.shader, render.shaderRenderHeightLoc, &render.renderTexHeight, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(render.shader, render.shaderPixelWidthLoc, &render.pixelSize, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(render.shader, render.shaderPixelHeightLoc, &render.pixelSize, SHADER_UNIFORM_FLOAT);
-    render.shaderEnabled = false;
+    // viewport.shader = LoadShader(0, TextFormat("assets/shaders/pixel%i.fs", GLSL_VERSION));
+    // viewport.shaderRenderWidthLoc = GetShaderLocation(viewport.shader, "renderWidth");
+    // viewport.shaderRenderHeightLoc = GetShaderLocation(viewport.shader, "renderHeight");
+    // viewport.shaderPixelWidthLoc = GetShaderLocation(viewport.shader, "pixelWidth");
+    // viewport.shaderPixelHeightLoc = GetShaderLocation(viewport.shader, "pixelHeight");
+    // viewport.pixelSize = SHADER_PIXEL_SIZE;
+    // SetShaderValue(viewport.shader, viewport.shaderRenderWidthLoc, &viewport.renderTexWidth, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(viewport.shader, viewport.shaderRenderHeightLoc, &viewport.renderTexHeight, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(viewport.shader, viewport.shaderPixelWidthLoc, &viewport.pixelSize, SHADER_UNIFORM_FLOAT);
+    // SetShaderValue(viewport.shader, viewport.shaderPixelHeightLoc, &viewport.pixelSize, SHADER_UNIFORM_FLOAT);
+    viewport.shaderEnabled = false;
 }
 
 // Updates window render info for each frame
@@ -42,33 +42,33 @@ void UpdateWindowRenderFrame(void)
 {
     float winWidth = (float)GetRenderWidth();
     float winHeight = (float)GetRenderHeight();
-    render.width = winWidth;
-    render.height = winHeight;
+    viewport.width = winWidth;
+    viewport.height = winHeight;
 
-    render.scale = fminf(render.width/render.renderTexWidth, render.height/render.renderTexHeight);
+    viewport.scale = fminf(viewport.width/viewport.renderTexWidth, viewport.height/viewport.renderTexHeight);
 
     float windowAspect = winWidth/winHeight;
 
     if (windowAspect > ASPECT_RATIO)
     {
         // Window too wide → pillarbox
-        render.height = winHeight;
-        render.width = (winHeight*ASPECT_RATIO);
-        render.x = (winWidth - render.width)/2;
-        render.y = 0;
+        viewport.height = winHeight;
+        viewport.width = (winHeight*ASPECT_RATIO);
+        viewport.x = (winWidth - viewport.width)/2;
+        viewport.y = 0;
     }
     else
     {
         // Window too tall → letterbox
-        render.width = winWidth;
-        render.height = winWidth/ASPECT_RATIO;
-        render.x = 0;
-        render.y = (winHeight - render.height)/2;
+        viewport.width = winWidth;
+        viewport.height = winWidth/ASPECT_RATIO;
+        viewport.x = 0;
+        viewport.y = (winHeight - viewport.height)/2;
     }
 
     // adjust ui camera for possible window resize
     ui.camera.offset = (Vector2) {
-        render.x + render.width/2.0f, render.y + render.height/2.0f
+        viewport.x + viewport.width/2.0f, viewport.y + viewport.height/2.0f
     };
-    ui.camera.zoom = render.width/VIRTUAL_WIDTH;
+    ui.camera.zoom = viewport.width/VIRTUAL_WIDTH;
 }

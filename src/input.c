@@ -112,8 +112,8 @@ void ProcessUserInput(InputPollFlag pollType)
         Vector2 mousePos = GetMousePosition();
         // adjust for window offset and scale (not needed for UI)
         Vector2 gameMousePos = {
-            (mousePos.x - render.x)/render.scale,
-            (mousePos.y - render.y)/render.scale
+            (mousePos.x - viewport.x)/viewport.scale,
+            (mousePos.y - viewport.y)/viewport.scale
         };
         input.mouse.gamePosition = GetScreenToWorld2D(gameMousePos, game.camera);
         input.mouse.uiPosition   = GetScreenToWorld2D(mousePos, ui.camera);
@@ -179,8 +179,8 @@ void ProcessUserInput(InputPollFlag pollType)
             {
                 Vector2 touchPos = GetTouchPosition(i);
                 Vector2 gameTouchPos = {
-                    (touchPos.x - render.x)/render.scale,
-                    (touchPos.y - render.y)/render.scale
+                    (touchPos.x - viewport.x)/viewport.scale,
+                    (touchPos.y - viewport.y)/viewport.scale
                 };
                 TouchPoint *touchPoint           = &input.touchPoints[i];
                 touchPoint->gamePosition         = GetScreenToWorld2D(gameTouchPos, game.camera);

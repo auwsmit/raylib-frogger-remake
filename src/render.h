@@ -1,5 +1,5 @@
 // EXPLANATION:
-// To render the game window and screen shader(s)
+// To render the game viewport and screen shader(s)
 
 #ifndef FROGGER_RENDER_HEADER_GUARD
 #define FROGGER_RENDER_HEADER_GUARD
@@ -18,11 +18,11 @@ typedef struct {
     bool shaderEnabled;
 } RenderData;
 
-extern RenderData render; // global declaration
+extern RenderData viewport; // global declaration
 
 // Prototypes
 // ----------------------------------------------------------------------------
-void InitWindowRender(void);
+void InitViewport(void);
 void InitRenderTexture(void);
 void InitScreenShader(void);
 void UpdateWindowRenderFrame(void); // update window for aspect ratio, cameras, and shaders

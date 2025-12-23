@@ -822,7 +822,7 @@ void DrawDebugInfo(void)
     textY += textSize;
     DrawText(TextFormat("mouse: %3.0f, %3.0f", input.mouse.uiPosition.x, input.mouse.uiPosition.y), 0, textY, textSize, RAYWHITE);
     textY += textSize;
-    DrawText(TextFormat("render res: %.0f, %.0f", render.renderTexWidth, render.renderTexHeight), 0, textY, textSize, RAYWHITE);
+    DrawText(TextFormat("render res: %.0f, %.0f", viewport.renderTexWidth, viewport.renderTexHeight), 0, textY, textSize, RAYWHITE);
     textY += textSize;
     if (input.touchCount > 0)
     {
