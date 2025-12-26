@@ -49,14 +49,10 @@ typedef struct {
 
 typedef struct {
     Texture atlas;
-    Rectangle car;
-    Rectangle frog;
-    Rectangle grassPurple;
-    Rectangle grassGreen;
-    Rectangle dead;
-    Rectangle turtle;
-    Rectangle winFrog;
-    Rectangle log;
+    Rectangle grassPurple, grassGreen,
+              log, turtle, car,
+              frog, deadFrog, winFrog,
+              life, level;
 } GameTextures;
 
 typedef struct {
@@ -106,9 +102,10 @@ typedef struct {
     GameTextures textures;
 
     Entity *entities;
-    Entity *frog; // pointer to frog for convenience
+    Entity *frog; // player frog
     int winCount;
     int lives;
+    bool gameOver;
     float deathTimer;
     float animateTimer;
     float animateTextureOffset;
@@ -134,7 +131,7 @@ void FreeGameState(void);
 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
-void UpdateFrog(Entity *frog);
+void UpdateFrog(void);
 void UpdateHostile(Entity *hostile);
 void UpdatePlatform(Entity *platform);
 void UpdateWinZone(Entity *zone);

@@ -42,15 +42,16 @@ void InitGameState(void)
     // Textures
     game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
     SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
-    const int tSize = 16;
-    game.textures.car         = (Rectangle){ 48,   0, tSize, tSize };
-    game.textures.frog        = (Rectangle){  0,   0, tSize, tSize };
-    game.textures.grassPurple = (Rectangle){ 48,  32, tSize, tSize };
-    game.textures.grassGreen  = (Rectangle){ 64,  24, tSize, tSize };
-    game.textures.dead        = (Rectangle){ 48,  48, tSize, tSize };
-    game.textures.turtle      = (Rectangle){  0,  80, tSize, tSize };
-    game.textures.winFrog         = (Rectangle){ 48,  96, tSize, tSize };
-    game.textures.log         = (Rectangle){ 96, 128, tSize, tSize };
+    game.textures.car         = (Rectangle){ 48,   0, 16, 16 };
+    game.textures.frog        = (Rectangle){  0,   0, 16, 16 };
+    game.textures.grassPurple = (Rectangle){ 48,  32, 16, 16 };
+    game.textures.grassGreen  = (Rectangle){ 64,  24, 16, 24 };
+    game.textures.deadFrog    = (Rectangle){ 48,  48, 16, 16 };
+    game.textures.turtle      = (Rectangle){  0,  80, 16, 16 };
+    game.textures.winFrog     = (Rectangle){ 48,  96, 16, 16 };
+    game.textures.log         = (Rectangle){ 96, 128, 16, 16 };
+    game.textures.life        = (Rectangle){ 48,  16,  8,  8 };
+    game.textures.level       = (Rectangle){ 96, 128, 16, 16 };
 
     // Create entities
     // ----------------------------------------------------------------------------
@@ -74,7 +75,7 @@ void InitGameState(void)
         .radius = GRID_UNIT*0.4f,
         .color = GREEN,
     };
-    Vector2 frogSpawnPos = GetGridPosition(10, 14);
+    Vector2 frogSpawnPos = GetGridPosition(8, 14);
     frog.position = frogSpawnPos;
     frog.position.x += GRID_UNIT/2;
     frog.position.y += GRID_UNIT/2;
@@ -173,7 +174,6 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         if (type == ENTITY_TYPE_WALL)
         {
             e.sprite = game.textures.grassGreen;
-            e.sprite.height += 8;
             if (isLeftWall)
                 e.spriteOffset.x = 32;
             isLeftWall = !isLeftWall;
@@ -241,13 +241,26 @@ void UpdateGameFrame(void)
             SetTimedMessage("Winner!", 100, 3.0f);
         }
 
+        // Game over condition
+        if ((game.lives == 0) && !game.gameOver)
+        {
+            game.gameOver = true;
+            SetTimedMessage("Game Over!", 100, 3.0f);
+        }
+        if (game.gameOver && (ui.messageTimer < EPSILON))
+        {
+            FreeGameState();
+            InitGameState();
+            game.currentScreen = SCREEN_GAMEPLAY;
+        }
+
         // Update entities
         for (int i = 0; i < arrlen(game.entities); i++)
         {
             Entity *e = &game.entities[i];
 
             if (e->type == ENTITY_TYPE_FROG)
-                UpdateFrog(e);
+                UpdateFrog();
             if (e->type == ENTITY_TYPE_WIN)
                 UpdateWinZone(e);
 
@@ -283,75 +296,77 @@ void UpdateGameFrame(void)
     UpdateUiFrame();
 }
 
-void UpdateFrog(Entity *frog)
+void UpdateFrog()
 {
-    // track frog to moving platform
-    if (frog->isOnPlatform)
+    if (game.lives == 0) return;
+
+    // track game.frog to moving platform
+    if (game.frog->isOnPlatform)
     {
-        frog->position.x += frog->platformMove*game.frameTime;
-        frog->seekPos.x += frog->platformMove*game.frameTime;
-        frog->bufferPos.x += frog->platformMove*game.frameTime;
+        game.frog->position.x += game.frog->platformMove*game.frameTime;
+        game.frog->seekPos.x += game.frog->platformMove*game.frameTime;
+        game.frog->bufferPos.x += game.frog->platformMove*game.frameTime;
     }
 
     // wrap around screen edge
-    bool pastLeftEdge = (frog->position.x + frog->radius < game.gridStart.x);
+    bool pastLeftEdge = (game.frog->position.x + game.frog->radius < game.gridStart.x);
     if (pastLeftEdge)
     {
-        frog->position.x += GRID_WIDTH;
-        frog->seekPos.x += GRID_WIDTH;
-        frog->bufferPos.x += GRID_WIDTH;
+        game.frog->position.x += GRID_WIDTH;
+        game.frog->seekPos.x += GRID_WIDTH;
+        game.frog->bufferPos.x += GRID_WIDTH;
         KillFrog();
     }
-    bool pastRightEdge = (frog->position.x - frog->radius > game.gridStart.x + GRID_WIDTH);
+    bool pastRightEdge = (game.frog->position.x - game.frog->radius > game.gridStart.x + GRID_WIDTH);
     if (pastRightEdge)
     {
-        frog->position.x -= GRID_WIDTH;
-        frog->seekPos.x -= GRID_WIDTH;
-        frog->bufferPos.x -= GRID_WIDTH;
+        game.frog->position.x -= GRID_WIDTH;
+        game.frog->seekPos.x -= GRID_WIDTH;
+        game.frog->bufferPos.x -= GRID_WIDTH;
         KillFrog();
     }
 
-    bool onLeftEdge = (frog->position.x - frog->radius < game.gridStart.x);
-    bool onRightEdge = (frog->position.x + frog->radius > game.gridStart.x + GRID_WIDTH);
-    frog->isWrapping = onLeftEdge || onRightEdge;
+    bool onLeftEdge = (game.frog->position.x - game.frog->radius < game.gridStart.x);
+    bool onRightEdge = (game.frog->position.x + game.frog->radius > game.gridStart.x + GRID_WIDTH);
+    game.frog->isWrapping = onLeftEdge || onRightEdge;
 
-    // respawn frog
-    if (frog->isDead)
+    // respawn game.frog
+    if (game.frog->isDead)
     {
         game.deathTimer -= game.frameTime;
 
         if (game.deathTimer < 0)
         {
-            frog->position = game.spawnPos;
-            frog->seekPos = game.spawnPos;
-            frog->bufferPos= game.spawnPos;
-            frog->isDead = false;
-            frog->isDrowned = false;
+            game.frog->position = game.spawnPos;
+            game.frog->seekPos = game.spawnPos;
+            game.frog->bufferPos= game.spawnPos;
+            game.frog->isDead = false;
+            game.frog->isDrowned = false;
         }
 
         return; // no update
     }
 
-    // frog drowned in river (lethal rapids, I guess?)
-    if (!frog->isOnPlatform &&
-        CheckCollisionPointRec(frog->position, game.background.water))
+    // game.frog drowned in river (lethal rapids, I guess?)
+    if (!game.frog->isOnPlatform &&
+        CheckCollisionPointRec(game.frog->position, game.background.water))
     {
         KillFrog();
-        frog->isDrowned = true;
+        game.frog->isDrowned = true;
         return;
     }
-    frog->isOnPlatform = false;
+    game.frog->isOnPlatform = false;
 
-    // check if frog reached destination
-    if (frog->isMoving && Vector2Equals(frog->position, frog->seekPos))
+    // check if game.frog reached destination
+    if (game.frog->isMoving && Vector2Equals(game.frog->position, game.frog->seekPos))
     {
         // move to possible buffered position
-        if (frog->isMoveBuffered)
+        if (game.frog->isMoveBuffered)
         {
-            frog->seekPos = frog->bufferPos;
-            frog->isMoveBuffered = false;
+            game.frog->seekPos = game.frog->bufferPos;
+            game.frog->isMoveBuffered = false;
         }
-        else frog->isMoving = false;
+        else game.frog->isMoving = false;
     }
 
     // set movement vector
@@ -366,56 +381,56 @@ void UpdateFrog(Entity *frog)
         else if (input.player.moveLeft)  moveVector.x -= GRID_UNIT;
         else if (input.player.moveRight) moveVector.x += GRID_UNIT;
 
-        Vector2 newSeekPos = Vector2Add(frog->position, moveVector);
+        Vector2 newSeekPos = Vector2Add(game.frog->position, moveVector);
 
         // no moving past screen edge
-        pastLeftEdge        = (newSeekPos.x + frog->radius < game.gridStart.x + GRID_UNIT);
-        pastRightEdge       = (newSeekPos.x - frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
-        bool pastBottomEdge = (newSeekPos.y - frog->radius > game.gridStart.y + GRID_HEIGHT);
+        pastLeftEdge        = (newSeekPos.x + game.frog->radius < game.gridStart.x + GRID_UNIT);
+        pastRightEdge       = (newSeekPos.x - game.frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
+        bool pastBottomEdge = (newSeekPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT);
         if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
 
-        Vector2 newBufferPos = Vector2Add(frog->seekPos, moveVector);
+        Vector2 newBufferPos = Vector2Add(game.frog->seekPos, moveVector);
 
-        // set frog seek position
-        if (!frog->isMoving)
+        // set game.frog seek position
+        if (!game.frog->isMoving)
         {
-            frog->isMoving = true;
-            frog->seekPos = newSeekPos;
-            // frog->bufferPos = newSeekPos;
+            game.frog->isMoving = true;
+            game.frog->seekPos = newSeekPos;
+            // game.frog->bufferPos = newSeekPos;
         }
         // set buffered position
-        else if (!frog->isMoveBuffered && !Vector2Equals(frog->bufferPos, newBufferPos))
+        else if (!game.frog->isMoveBuffered && !Vector2Equals(game.frog->bufferPos, newBufferPos))
         {
-            pastLeftEdge        = (newBufferPos.x + frog->radius < game.gridStart.x + GRID_UNIT);
-            pastRightEdge       = (newBufferPos.x - frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
-            pastBottomEdge = (newBufferPos.y - frog->radius > game.gridStart.y + GRID_HEIGHT);
+            pastLeftEdge        = (newBufferPos.x + game.frog->radius < game.gridStart.x + GRID_UNIT);
+            pastRightEdge       = (newBufferPos.x - game.frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
+            pastBottomEdge = (newBufferPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT);
             if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
 
-            frog->bufferPos = newBufferPos;
-            frog->isMoveBuffered = true;
+            game.frog->bufferPos = newBufferPos;
+            game.frog->isMoveBuffered = true;
         }
     }
 
-    // move frog towards next position
-    if (frog->isMoving)
+    // move game.frog towards next position
+    if (game.frog->isMoving)
     {
-        Vector2 newPos = Vector2MoveTowards(frog->position, frog->seekPos, frog->speed*game.frameTime);
-        Vector2 moveDelta = Vector2Subtract(frog->position, newPos);
-        frog->position = newPos;
+        Vector2 newPos = Vector2MoveTowards(game.frog->position, game.frog->seekPos, game.frog->speed*game.frameTime);
+        Vector2 moveDelta = Vector2Subtract(game.frog->position, newPos);
+        game.frog->position = newPos;
 
         // set sprite
-        float distFromDest = Vector2Length(Vector2Subtract(frog->position, frog->seekPos));
+        float distFromDest = Vector2Length(Vector2Subtract(game.frog->position, game.frog->seekPos));
         if (distFromDest < GRID_UNIT*0.2f)
-            frog->spriteOffset.x = 32; // not hopping
+            game.frog->spriteOffset.x = 32; // not hopping
         else
-            frog->spriteOffset.x = 0; // hopping
+            game.frog->spriteOffset.x = 0; // hopping
 
-        if (moveDelta.x > 0) frog->angle = 270;
-        if (moveDelta.x < 0) frog->angle = 90;
-        if (moveDelta.y > 0) frog->angle = 0;
-        if (moveDelta.y < 0) frog->angle = 180;
+        if (moveDelta.x > 0) game.frog->angle = 270;
+        if (moveDelta.x < 0) game.frog->angle = 90;
+        if (moveDelta.y > 0) game.frog->angle = 0;
+        if (moveDelta.y < 0) game.frog->angle = 180;
     }
-    else frog->spriteOffset.x = 32;
+    else game.frog->spriteOffset.x = 32;
 }
 
 void UpdateHostile(Entity *hostile)
@@ -490,7 +505,7 @@ void DrawGameFrame(void)
 
     // Draw background elements
     // ----------------------------------------------------------------------------
-    DrawRectangleRec(game.background.water, ColorBrightness(DARKBLUE, -0.5f));
+    DrawRectangleRec(game.background.water, (Color){ 0x00, 0x04, 0x4a, 255 });
     DrawGrass(game.background.grassTop);
     DrawGrass(game.background.grassBottom);
 
@@ -501,21 +516,13 @@ void DrawGameFrame(void)
     {
         Entity *e = &game.entities[i];
 
-        // Platforms
+        // Draw grass on top of screen
         if (e->type == ENTITY_TYPE_WALL)
         {
             Rectangle sprite = e->sprite;
             sprite.x += e->spriteOffset.x;
             sprite.y += e->spriteOffset.y;
-            DrawRectangleRec(sprite, e->color);
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
-            if (e->isWrapping)
-            {
-                DrawRectangleV((Vector2){ e->rec.x + GRID_WIDTH, e->rec.y },
-                               (Vector2){ e->rec.width, e->rec.height }, e->color);
-                DrawRectangleV((Vector2){ e->rec.x - GRID_WIDTH, e->rec.y },
-                               (Vector2){ e->rec.width, e->rec.height }, e->color);
-            }
         }
 
         // Win zones
@@ -525,6 +532,7 @@ void DrawGameFrame(void)
             // DrawCircleV(e->position, game.frog->radius, game.frog->color);
             Rectangle topGrass = game.textures.grassGreen;
             topGrass.x += 16;
+            topGrass.height -= 8;
             Rectangle grassRec = e->rec;
             grassRec.y -= GRID_UNIT/2;
             DrawSpriteOnRectangle(&game.textures.atlas, topGrass, grassRec, e->angle);
@@ -590,7 +598,7 @@ void DrawGameFrame(void)
             float angle;
             if (e->isDead)
             {
-                sprite = game.textures.dead;
+                sprite = game.textures.deadFrog;
                 angle = 0;
             }
             else
@@ -627,6 +635,18 @@ void DrawGameFrame(void)
     DrawRectangleV((Vector2){ game.gridStart.x, (game.gridStart.y + GRID_HEIGHT - GRID_UNIT) },
                    (Vector2){ GRID_WIDTH, (VIRTUAL_HEIGHT + GRID_UNIT - (game.gridStart.y + GRID_HEIGHT)) },
                    BLACK);
+
+    // Draw HUD
+    // ----------------------------------------------------------------------------
+    Vector2 lifePos = game.gridStart;
+    lifePos.x += GRID_UNIT;
+    lifePos.y += GRID_HEIGHT - GRID_UNIT;
+    for (int i = 0; i < game.lives; i++)
+    {
+        Rectangle lifeRec = { lifePos.x, lifePos.y, GRID_UNIT/2, GRID_UNIT/2 };
+        DrawTexturePro(game.textures.atlas, game.textures.life, lifeRec, Vector2Zero(), 0, WHITE);
+        lifePos.x += GRID_UNIT/2;
+    }
 }
 
 void DrawGrass(Rectangle grassRec)
@@ -651,4 +671,5 @@ void KillFrog(void)
 {
     game.frog->isDead = true;
     game.deathTimer = 0.5f;
+    game.lives--;
 }
