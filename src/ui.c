@@ -55,7 +55,7 @@ void InitUiState(void)
     CreateUiMenuButtonRelative("Volume:", 0);
     CreateUiSlider(UiCallbackSetVolume, GetMasterVolume, 0.0f, 1.0f, 0.1f);
     CreateUiMenuButtonRelative("Render scale:", 0);
-    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 1/3.0f, 3.0f, 1/3.0f);
+    CreateUiSlider(UiCallbackSetRenderScale, UiCallbackGetRenderScale, 1/4.0f, 4.0f, 1/4.0f);
 
     // Pause menu
     // ----------------------------------------------------------------------------

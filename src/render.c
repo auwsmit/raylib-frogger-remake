@@ -3,7 +3,7 @@
 
 void InitViewport(void)
 {
-    viewport = (RenderData){ .resScale = 1 + 1.0f/3.0f }; // means 1440p default
+    viewport = (RenderData){ .resScale = 2 };
     InitRenderTexture();
     InitScreenShader();
 }

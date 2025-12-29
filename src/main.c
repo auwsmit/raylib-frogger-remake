@@ -129,7 +129,7 @@ void UpdateDrawFrame(void)
             {
                 case SCREEN_LOGO:     DrawRaylibLogo();
                                       break;
-                case SCREEN_TITLE:    ClearBackground(DARKGREEN);
+                case SCREEN_TITLE:    ClearBackground(BG_COLOR);
                                       break;
                 case SCREEN_GAMEPLAY: DrawGameFrame();
                                       break;

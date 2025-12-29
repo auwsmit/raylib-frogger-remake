@@ -42,16 +42,19 @@ void InitGameState(void)
     // Textures
     game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
     SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
-    game.textures.car         = (Rectangle){ 48,   0, 16, 16 };
-    game.textures.frog        = (Rectangle){  0,   0, 16, 16 };
-    game.textures.grassPurple = (Rectangle){ 48,  32, 16, 16 };
-    game.textures.grassGreen  = (Rectangle){ 64,  24, 16, 24 };
-    game.textures.deadFrog    = (Rectangle){ 48,  48, 16, 16 };
-    game.textures.turtle      = (Rectangle){  0,  80, 16, 16 };
-    game.textures.winFrog     = (Rectangle){ 48,  96, 16, 16 };
-    game.textures.log         = (Rectangle){ 96, 128, 16, 16 };
-    game.textures.life        = (Rectangle){ 48,  16,  8,  8 };
-    game.textures.level       = (Rectangle){ 96, 128, 16, 16 };
+    const float s = SPRITE_SIZE;
+    game.textures.car         = (Rectangle){ s*3, 0,      s,   s      };
+    game.textures.frog        = (Rectangle){ 0,   0,      s,   s      };
+    game.textures.grassPurple = (Rectangle){ s*3, s*2,    s,   s      };
+    game.textures.grassGreen  = (Rectangle){ s*4, s*1.5f, s,   s*1.5f };
+    game.textures.deadFrog    = (Rectangle){ s*3, s*3,    s,   s      };
+    game.textures.turtle      = (Rectangle){ 0,   s*5,    s,   s      };
+    game.textures.winFrog     = (Rectangle){ s*3, s*6,    s,   s      };
+    game.textures.log         = (Rectangle){ s*6, s*8,    s,   s      };
+    game.textures.life        = (Rectangle){ s*3, s,      s/2, s/2    };
+    game.textures.level       = (Rectangle){ s*6, s*8,    s,   s      };
+
+    game.font = LoadFont("assets/fonts/PressStart2P.ttf");
 
     // Create entities
     // ----------------------------------------------------------------------------
@@ -91,16 +94,16 @@ void InitGameState(void)
     CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  BASE_SPEED*0.4f);
     CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "______O___.O___.O", -BASE_SPEED*0.4f);
 
-    // Background rectangles (river, grass, road)
+    // Background rectangles
     game.background.water.x = game.gridStart.x;
     game.background.water.y = game.gridStart.y;
     game.background.water.width = GRID_WIDTH;
     game.background.water.height = GRID_UNIT*8;
 
-    game.background.grassTop.x = game.gridStart.x;
-    game.background.grassTop.y = GetGridPosition(0, 8).y;
-    game.background.grassTop.width = GRID_WIDTH;
-    game.background.grassTop.height = GRID_UNIT;
+    game.background.grassMiddle.x = game.gridStart.x;
+    game.background.grassMiddle.y = GetGridPosition(0, 8).y;
+    game.background.grassMiddle.width = GRID_WIDTH;
+    game.background.grassMiddle.height = GRID_UNIT;
 
     game.background.grassBottom.x = game.gridStart.x;
     game.background.grassBottom.y = GetGridPosition(0, 14).y;
@@ -110,15 +113,15 @@ void InitGameState(void)
 
 void CreateRow(EntityType type, int row, char *pattern, float speed)
 {
-
+    const float s = SPRITE_SIZE;
     float carTextureOffsets[5] = {
-        32, // truck
-        80, // racer 1
-        64, // car
-        16, // tractor
-        0,  // racer 2
+        s*2, // truck
+        s*5, // racer 1
+        s*4, // car
+        s,   // tractor
+        0,   // racer 2
     };
-    float carTextureSizes[5] = { 32, 16, 16, 16, 16 };
+    float carTextureSizes[5] = { s*2, s, s, s, s };
     int spriteIdx = row - 9;
     Vector2 currentPos = GetGridPosition(0, row);
     float entityWidth = GRID_UNIT;
@@ -175,7 +178,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         {
             e.sprite = game.textures.grassGreen;
             if (isLeftWall)
-                e.spriteOffset.x = 32;
+                e.spriteOffset.x = s*2;
             isLeftWall = !isLeftWall;
             e.flags = ENTITY_FLAG_KILL;
             e.rec.height += GRID_UNIT/2;
@@ -235,19 +238,20 @@ void UpdateGameFrame(void)
         // Current level win condition
         if (game.winCount == 0)
         {
+            SetTimedMessage("Winner!", 100, 3.0f);
             FreeGameState();
             InitGameState();
             game.currentScreen = SCREEN_GAMEPLAY;
-            SetTimedMessage("Winner!", 100, 3.0f);
         }
 
         // Game over condition
         if ((game.lives == 0) && !game.gameOver)
         {
             game.gameOver = true;
-            SetTimedMessage("Game Over!", 100, 3.0f);
+            SetTimedMessage("Game Over!", 100, 2.0f);
+            game.waitTimer = 3.0f;
         }
-        if (game.gameOver && (ui.messageTimer < EPSILON))
+        if (game.gameOver && (game.waitTimer < EPSILON))
         {
             FreeGameState();
             InitGameState();
@@ -259,24 +263,15 @@ void UpdateGameFrame(void)
         {
             Entity *e = &game.entities[i];
 
-            if (e->type == ENTITY_TYPE_FROG)
-                UpdateFrog();
-            if (e->type == ENTITY_TYPE_WIN)
-                UpdateWinZone(e);
-
-            if (e->flags & ENTITY_FLAG_KILL)
-            {
-                UpdateHostile(e);
-            }
-            if (e->flags & ENTITY_FLAG_PLATFORM)
-            {
-                UpdatePlatform(e);
-            }
-            if (e->flags & ENTITY_FLAG_MOVE)
-            {
-                MoveEntity(e);
-            }
+            if (e->type == ENTITY_TYPE_FROG)     UpdateFrog();
+            if (e->type == ENTITY_TYPE_WIN)      UpdateWinZone(e);
+            if (e->flags & ENTITY_FLAG_KILL)     UpdateHostile(e);
+            if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
+            if (e->flags & ENTITY_FLAG_MOVE)     MoveEntity(e);
         }
+
+        if (game.waitTimer > 0)
+            game.waitTimer -= game.frameTime;
 
         if (game.animateTimer > 0)
         {
@@ -284,8 +279,8 @@ void UpdateGameFrame(void)
         }
         else
         {
-            game.animateTimer = 0.3333f;
-            game.animateTextureOffset = fmodf(game.animateTextureOffset + game.textures.turtle.width, 48.0f);
+            game.animateTimer = 0.25f;
+            game.animateTextureOffset = fmodf(game.animateTextureOffset + game.textures.turtle.width, SPRITE_SIZE*3);
         }
     }
     // Prevent input after resuming pause
@@ -296,11 +291,11 @@ void UpdateGameFrame(void)
     UpdateUiFrame();
 }
 
-void UpdateFrog()
+void UpdateFrog(void)
 {
-    if (game.lives == 0) return;
+    if ((game.lives == 0)) return;
 
-    // track game.frog to moving platform
+    // track to moving platform
     if (game.frog->isOnPlatform)
     {
         game.frog->position.x += game.frog->platformMove*game.frameTime;
@@ -335,7 +330,7 @@ void UpdateFrog()
     {
         game.deathTimer -= game.frameTime;
 
-        if (game.deathTimer < 0)
+        if ((game.deathTimer < 0) && !game.gameOver)
         {
             game.frog->position = game.spawnPos;
             game.frog->seekPos = game.spawnPos;
@@ -373,7 +368,7 @@ void UpdateFrog()
     bool moveInput = (input.player.moveUp   || input.player.moveDown ||
                       input.player.moveLeft || input.player.moveRight);
 
-    if (moveInput)
+    if (moveInput && (game.waitTimer < EPSILON))
     {
         Vector2 moveVector = Vector2Zero();
         if      (input.player.moveUp)    moveVector.y -= GRID_UNIT;
@@ -386,7 +381,7 @@ void UpdateFrog()
         // no moving past screen edge
         pastLeftEdge        = (newSeekPos.x + game.frog->radius < game.gridStart.x + GRID_UNIT);
         pastRightEdge       = (newSeekPos.x - game.frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
-        bool pastBottomEdge = (newSeekPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT);
+        bool pastBottomEdge = (newSeekPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT - GRID_UNIT);
         if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
 
         Vector2 newBufferPos = Vector2Add(game.frog->seekPos, moveVector);
@@ -403,7 +398,7 @@ void UpdateFrog()
         {
             pastLeftEdge        = (newBufferPos.x + game.frog->radius < game.gridStart.x + GRID_UNIT);
             pastRightEdge       = (newBufferPos.x - game.frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
-            pastBottomEdge = (newBufferPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT);
+            pastBottomEdge = (newBufferPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT - GRID_UNIT);
             if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
 
             game.frog->bufferPos = newBufferPos;
@@ -501,17 +496,18 @@ void MoveEntity(Entity *e)
 
 void DrawGameFrame(void)
 {
-    ClearBackground(ColorBrightness(DARKGRAY, -0.8f));
+    ClearBackground(BLACK);
 
     // Draw background elements
     // ----------------------------------------------------------------------------
-    DrawRectangleRec(game.background.water, (Color){ 0x00, 0x04, 0x4a, 255 });
-    DrawGrass(game.background.grassTop);
+    DrawRectangleRec(game.background.water, WATER_COLOR);
+    DrawGrass(game.background.grassMiddle);
     DrawGrass(game.background.grassBottom);
 
 
     // Draw entities
     // ----------------------------------------------------------------------------
+    const float s = SPRITE_SIZE;
     for (int i = 0; i < arrlen(game.entities); i++)
     {
         Entity *e = &game.entities[i];
@@ -531,8 +527,8 @@ void DrawGameFrame(void)
             // DrawRectangleRec(e->rec, e->color);
             // DrawCircleV(e->position, game.frog->radius, game.frog->color);
             Rectangle topGrass = game.textures.grassGreen;
-            topGrass.x += 16;
-            topGrass.height -= 8;
+            topGrass.x += s;
+            topGrass.height -= s/2;
             Rectangle grassRec = e->rec;
             grassRec.y -= GRID_UNIT/2;
             DrawSpriteOnRectangle(&game.textures.atlas, topGrass, grassRec, e->angle);
@@ -575,9 +571,9 @@ void DrawGameFrame(void)
             for (int i = 1; i <= logWidth; i++)
             {
                 if (i > 1)
-                    sprite.x = e->sprite.x + 16; // log middle
+                    sprite.x = e->sprite.x + s; // log middle
                 if (i == logWidth)
-                    sprite.x = e->sprite.x + 32; // log end
+                    sprite.x = e->sprite.x + s*2; // log end
                 DrawSpriteOnRectangle(&game.textures.atlas, sprite, rec, e->angle);
 
                 if (e->isWrapping)
@@ -625,19 +621,28 @@ void DrawGameFrame(void)
     // left, right, top, bottom
     DrawRectangleV((Vector2){ 0, 0 },
                    (Vector2){ VIRTUAL_WIDTH - GRID_WIDTH + GRID_UNIT/2, VIRTUAL_HEIGHT },
-                   BLACK);
+                   BG_COLOR);
     DrawRectangleV((Vector2){ game.gridStart.x + GRID_WIDTH - GRID_UNIT, 0 },
                    (Vector2){ VIRTUAL_WIDTH - GRID_WIDTH + GRID_UNIT, VIRTUAL_HEIGHT },
-                   BLACK);
+                   BG_COLOR);
     DrawRectangleV((Vector2){ game.gridStart.x, 0 },
                    (Vector2){ GRID_WIDTH, (VIRTUAL_HEIGHT + GRID_UNIT - (game.gridStart.y + GRID_HEIGHT)) },
-                   BLACK);
+                   BG_COLOR);
     DrawRectangleV((Vector2){ game.gridStart.x, (game.gridStart.y + GRID_HEIGHT - GRID_UNIT) },
                    (Vector2){ GRID_WIDTH, (VIRTUAL_HEIGHT + GRID_UNIT - (game.gridStart.y + GRID_HEIGHT)) },
-                   BLACK);
+                   BG_COLOR);
 
     // Draw HUD
     // ----------------------------------------------------------------------------
+    char *scoreLabel = "HI-SCORE";
+    float fontSize = GRID_UNIT*0.5f;
+    Vector2 fontMeasure = MeasureTextEx(game.font, scoreLabel, fontSize, 0);
+    float textPosX = (VIRTUAL_WIDTH - fontMeasure.x)/2;
+    float textPosY = game.gridStart.y;
+    Vector2 textPos = { textPosX, textPosY };
+    DrawTextEx(game.font, scoreLabel, textPos, fontSize, 0, WHITE);
+    DrawTextEx(game.font, "TODO", Vector2Add(textPos, (Vector2){ 0, fontMeasure.y }), fontSize, 0, WHITE);
+
     Vector2 lifePos = game.gridStart;
     lifePos.x += GRID_UNIT;
     lifePos.y += GRID_HEIGHT - GRID_UNIT;

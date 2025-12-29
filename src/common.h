@@ -21,11 +21,11 @@
 #include "rl_utils.h" // raylib extra convenience
 
 // Modules
+#include "frogger.h"
 #include "render.h"   // for rendering window and screen shader
 #include "input.h"    // input actions and helpers
 #include "logo.h"     // startup raylib logo animation
 #include "ui.h"       // user interface
 
-#include "frogger.h"
 
 #endif // FROGGER_COMMON_HEADER_GUARD
