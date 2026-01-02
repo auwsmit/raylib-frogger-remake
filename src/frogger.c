@@ -49,6 +49,7 @@ void InitGameState(void)
     game.textures.grassGreen  = (Rectangle){ s*4, s*1.5f, s,   s*1.5f };
     game.textures.deadFrog    = (Rectangle){ s*3, s*3,    s,   s      };
     game.textures.turtle      = (Rectangle){ 0,   s*5,    s,   s      };
+    game.textures.turtleSink  = (Rectangle){ s*3, s*5,    s,   s      };
     game.textures.winFrog     = (Rectangle){ s*3, s*6,    s,   s      };
     game.textures.log         = (Rectangle){ s*6, s*8,    s,   s      };
     game.textures.life        = (Rectangle){ s*3, s,      s/2, s/2    };
@@ -63,16 +64,16 @@ void InitGameState(void)
     int spawnRow = 2;
     CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
     CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", GRID_UNIT*1.1f);
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___OO_.OO_.OO_.OO", -GRID_UNIT*1.5f);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  GRID_UNIT*2.5f);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  GRID_UNIT*0.5f);
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_OOO_OOO_OOO_OOO",  -GRID_UNIT*1.5f);
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", BASE_SPEED);
+    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -BASE_SPEED*1.2f);
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  BASE_SPEED*2);
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  BASE_SPEED*0.5f);
+    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -BASE_SPEED);
 
     // Frog
     Entity frog = {
         .sprite = game.textures.frog,
-        .spriteOffset = 32,
+        .textureOffset = SPRITE_SIZE*2,
         .type = ENTITY_TYPE_FROG,
         .speed = BASE_SPEED*4.0f,
         .radius = GRID_UNIT*0.4f,
@@ -158,6 +159,15 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
             e.sprite = game.textures.turtle;
             e.flags = ENTITY_FLAG_MOVE | ENTITY_FLAG_PLATFORM;
             isExtending = false;
+            if (*c == 'F' || *c == 'S')
+            {
+                e.isSinking = true;
+                e.animate.sprite = game.textures.turtleSink;
+                e.animate.frames = 3;
+                e.animate.offset = SPRITE_SIZE;
+                if (*c == 'F') e.animate.length = 0.5f; // fast sink
+                if (*c == 'S') e.animate.length = 1.0f;  // slow sink
+            }
         }
 
         if (type == ENTITY_TYPE_LOG)
@@ -178,7 +188,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         {
             e.sprite = game.textures.grassGreen;
             if (isLeftWall)
-                e.spriteOffset.x = s*2;
+                e.textureOffset.x = s*2;
             isLeftWall = !isLeftWall;
             e.flags = ENTITY_FLAG_KILL;
             e.rec.height += GRID_UNIT/2;
@@ -268,15 +278,15 @@ void UpdateGameFrame(void)
             if (e->flags & ENTITY_FLAG_KILL)     UpdateHostile(e);
             if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
             if (e->flags & ENTITY_FLAG_MOVE)     MoveEntity(e);
+            if (e->isSinking)                    UpdateSinkingTurtle(e);
         }
 
         if (game.waitTimer > 0)
             game.waitTimer -= game.frameTime;
 
+        // Update global turtle animation
         if (game.animateTimer > 0)
-        {
             game.animateTimer -= game.frameTime;
-        }
         else
         {
             game.animateTimer = 0.25f;
@@ -416,16 +426,37 @@ void UpdateFrog(void)
         // set sprite
         float distFromDest = Vector2Length(Vector2Subtract(game.frog->position, game.frog->seekPos));
         if (distFromDest < GRID_UNIT*0.2f)
-            game.frog->spriteOffset.x = 32; // not hopping
+            game.frog->textureOffset.x = SPRITE_SIZE*2; // not hopping
         else
-            game.frog->spriteOffset.x = 0; // hopping
+            game.frog->textureOffset.x = 0; // hopping
 
         if (moveDelta.x > 0) game.frog->angle = 270;
         if (moveDelta.x < 0) game.frog->angle = 90;
         if (moveDelta.y > 0) game.frog->angle = 0;
         if (moveDelta.y < 0) game.frog->angle = 180;
     }
-    else game.frog->spriteOffset.x = 32;
+    else game.frog->textureOffset.x = SPRITE_SIZE*2;
+}
+
+void UpdateSinkingTurtle(Entity *turtle)
+{
+    if (turtle->animate.timer < EPSILON)
+    {
+        turtle->animate.frame += turtle->animate.frameIterate;
+        turtle->animate.timer = turtle->animate.length;
+        if (turtle->animate.frame >= 2)
+            turtle->animate.timer /= turtle->animate.frame;
+
+        if (turtle->animate.frame == turtle->animate.frames)
+            turtle->animate.frameIterate = -1;
+        else if (turtle->animate.frame == 0)
+            turtle->animate.frameIterate = 1;
+
+    }
+    else
+        turtle->animate.timer -= game.frameTime;
+
+    turtle->textureOffset.x = (float)((turtle->animate.frame - 1)*turtle->animate.offset);
 }
 
 void UpdateHostile(Entity *hostile)
@@ -454,6 +485,8 @@ void UpdatePlatform(Entity *platform)
         (colliding |= CheckCollisionPointRec(game.frog->position, platform->rec)))
     {
         game.frog->isOnPlatform = true;
+        if (platform->isSinking && platform->animate.frame == 3)
+            game.frog->isOnPlatform = false; // for sinking turtles
     }
 
     if (colliding && game.frog->isOnPlatform)
@@ -516,8 +549,8 @@ void DrawGameFrame(void)
         if (e->type == ENTITY_TYPE_WALL)
         {
             Rectangle sprite = e->sprite;
-            sprite.x += e->spriteOffset.x;
-            sprite.y += e->spriteOffset.y;
+            sprite.x += e->textureOffset.x;
+            sprite.y += e->textureOffset.y;
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
         }
 
@@ -541,7 +574,12 @@ void DrawGameFrame(void)
             Rectangle sprite = e->sprite;
             if (e->type == ENTITY_TYPE_TURTLE)
             {
-                sprite.x += game.animateTextureOffset;
+                if (e->animate.frame > 0)
+                {
+                    sprite = e->animate.sprite;
+                    sprite.x += e->textureOffset.x;
+                }
+                else sprite.x += game.animateTextureOffset;
             }
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
             if (e->isWrapping)
@@ -601,8 +639,8 @@ void DrawGameFrame(void)
             {
                 angle = e->angle;
                 sprite = e->sprite;
-                sprite.x += e->spriteOffset.x;
-                sprite.y += e->spriteOffset.y;
+                sprite.x += e->textureOffset.x;
+                sprite.y += e->textureOffset.y;
             }
 
             DrawSpriteOnCircle(&game.textures.atlas, sprite, e->position, GRID_UNIT/2, angle);

@@ -53,14 +53,19 @@ typedef struct {
 typedef struct {
     Texture atlas;
     Rectangle grassPurple, grassGreen,
-              log, turtle, car,
+              log, turtle, turtleSink, car,
               frog, deadFrog, winFrog,
               life, level;
 } GameTextures;
 
 typedef struct {
+    struct {
+        Rectangle sprite;
+        int frame, frames, frameIterate, offset;
+        float length, rate, timer;
+    } animate;
     Rectangle rec, sprite;
-    Vector2 spriteOffset;
+    Vector2 textureOffset;
     Vector2 position;
     Vector2 seekPos;
     Vector2 bufferPos;
@@ -76,6 +81,7 @@ typedef struct {
     bool isMoveBuffered;
     bool isOnPlatform;
     bool isDrowned;
+    bool isSinking;
     bool isDead;
     bool isWin;
 } Entity;
@@ -133,11 +139,14 @@ void CreateRow(EntityType type, int row, char *pattern, float speed); // create 
                                                                       // _ full unit space
                                                                       // . half unit space
                                                                       // O full width
+                                                                      // F fast sinking turtle
+                                                                      // S slow sinking turtle
 void FreeGameState(void);
 
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
 void UpdateFrog(void);
+void UpdateSinkingTurtle(Entity *turtle);
 void UpdateHostile(Entity *hostile);
 void UpdatePlatform(Entity *platform);
 void UpdateWinZone(Entity *zone);
