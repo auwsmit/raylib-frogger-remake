@@ -54,14 +54,15 @@ typedef struct {
     Texture atlas;
     Rectangle grassPurple, grassGreen,
               log, turtle, turtleSink, car,
-              frog, deadFrog, winFrog,
+              frog, dead, dying, winFrog,
               life, level;
 } GameTextures;
 
 typedef struct {
     struct {
         Rectangle sprite;
-        int frame, frames, frameIterate, offset;
+        int frame, frames, frameIterate;
+        Vector2 offset;
         float length, rate, timer;
     } animate;
     Rectangle rec, sprite;

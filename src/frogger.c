@@ -47,7 +47,8 @@ void InitGameState(void)
     game.textures.frog        = (Rectangle){ 0,   0,      s,   s      };
     game.textures.grassPurple = (Rectangle){ s*3, s*2,    s,   s      };
     game.textures.grassGreen  = (Rectangle){ s*4, s*1.5f, s,   s*1.5f };
-    game.textures.deadFrog    = (Rectangle){ s*3, s*3,    s,   s      };
+    game.textures.dead        = (Rectangle){ s*3, s*3,    s,   s      };
+    game.textures.dying       = (Rectangle){ 0,   s*3,    s,   s      };
     game.textures.turtle      = (Rectangle){ 0,   s*5,    s,   s      };
     game.textures.turtleSink  = (Rectangle){ s*3, s*5,    s,   s      };
     game.textures.winFrog     = (Rectangle){ s*3, s*6,    s,   s      };
@@ -65,7 +66,7 @@ void InitGameState(void)
     CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
     CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", BASE_SPEED);
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -BASE_SPEED*1.2f);
+    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -BASE_SPEED);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  BASE_SPEED*2);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  BASE_SPEED*0.5f);
     CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -BASE_SPEED);
@@ -78,6 +79,11 @@ void InitGameState(void)
         .speed = BASE_SPEED*4.0f,
         .radius = GRID_UNIT*0.4f,
         .color = GREEN,
+        .animate.sprite = game.textures.dying,
+        .animate.frames = 3,
+        .animate.offset.x = s,
+        .animate.offset.y = s,
+        .animate.length = 0.3f
     };
     Vector2 frogSpawnPos = GetGridPosition(8, 14);
     frog.position = frogSpawnPos;
@@ -164,7 +170,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
                 e.isSinking = true;
                 e.animate.sprite = game.textures.turtleSink;
                 e.animate.frames = 3;
-                e.animate.offset = SPRITE_SIZE;
+                e.animate.offset.x = SPRITE_SIZE;
                 if (*c == 'F') e.animate.length = 0.5f; // fast sink
                 if (*c == 'S') e.animate.length = 1.0f;  // slow sink
             }
@@ -263,8 +269,10 @@ void UpdateGameFrame(void)
         }
         if (game.gameOver && (game.waitTimer < EPSILON))
         {
+            bool debug = game.isDebugMode;
             FreeGameState();
             InitGameState();
+            game.isDebugMode = debug;
             game.currentScreen = SCREEN_GAMEPLAY;
         }
 
@@ -303,8 +311,6 @@ void UpdateGameFrame(void)
 
 void UpdateFrog(void)
 {
-    if ((game.lives == 0)) return;
-
     // track to moving platform
     if (game.frog->isOnPlatform)
     {
@@ -338,6 +344,18 @@ void UpdateFrog(void)
     // respawn game.frog
     if (game.frog->isDead)
     {
+        // update death animation
+        if ((game.frog->animate.timer < EPSILON) &&
+            (game.frog->animate.frame <= game.frog->animate.frames))
+        {
+            game.frog->animate.frame++;
+            if (game.frog->animate.frame >= 2)
+                game.frog->animate.timer /= game.frog->animate.frame;
+            game.frog->animate.timer = game.frog->animate.length;
+        }
+        else game.frog->animate.timer -= game.frameTime;
+        game.frog->textureOffset.x = game.frog->animate.offset.x*(game.frog->animate.frame - 1);
+
         game.deathTimer -= game.frameTime;
 
         if ((game.deathTimer < 0) && !game.gameOver)
@@ -347,22 +365,25 @@ void UpdateFrog(void)
             game.frog->bufferPos= game.spawnPos;
             game.frog->isDead = false;
             game.frog->isDrowned = false;
+            game.frog->textureOffset.y = 0;
+            game.frog->textureOffset.x = 0;
         }
 
         return; // no update
     }
 
-    // game.frog drowned in river (lethal rapids, I guess?)
+    // drowned in river (lethal rapids, I guess?)
     if (!game.frog->isOnPlatform &&
         CheckCollisionPointRec(game.frog->position, game.background.water))
     {
         KillFrog();
         game.frog->isDrowned = true;
+        game.frog->textureOffset.y = 0; // set to drown death animation
         return;
     }
     game.frog->isOnPlatform = false;
 
-    // check if game.frog reached destination
+    // frog reached next seek position
     if (game.frog->isMoving && Vector2Equals(game.frog->position, game.frog->seekPos))
     {
         // move to possible buffered position
@@ -373,6 +394,8 @@ void UpdateFrog(void)
         }
         else game.frog->isMoving = false;
     }
+
+    if ((game.lives == 0)) return;
 
     // set movement vector
     bool moveInput = (input.player.moveUp   || input.player.moveDown ||
@@ -401,13 +424,12 @@ void UpdateFrog(void)
         {
             game.frog->isMoving = true;
             game.frog->seekPos = newSeekPos;
-            // game.frog->bufferPos = newSeekPos;
         }
         // set buffered position
         else if (!game.frog->isMoveBuffered && !Vector2Equals(game.frog->bufferPos, newBufferPos))
         {
-            pastLeftEdge        = (newBufferPos.x + game.frog->radius < game.gridStart.x + GRID_UNIT);
-            pastRightEdge       = (newBufferPos.x - game.frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
+            pastLeftEdge   = (newBufferPos.x + game.frog->radius < game.gridStart.x + GRID_UNIT);
+            pastRightEdge  = (newBufferPos.x - game.frog->radius > game.gridStart.x + GRID_WIDTH - GRID_UNIT);
             pastBottomEdge = (newBufferPos.y - game.frog->radius > game.gridStart.y + GRID_HEIGHT - GRID_UNIT);
             if (pastLeftEdge || pastRightEdge || pastBottomEdge) return;
 
@@ -456,7 +478,7 @@ void UpdateSinkingTurtle(Entity *turtle)
     else
         turtle->animate.timer -= game.frameTime;
 
-    turtle->textureOffset.x = (float)((turtle->animate.frame - 1)*turtle->animate.offset);
+    turtle->textureOffset.x = (float)((turtle->animate.frame - 1)*turtle->animate.offset.x);
 }
 
 void UpdateHostile(Entity *hostile)
@@ -632,16 +654,24 @@ void DrawGameFrame(void)
             float angle;
             if (e->isDead)
             {
-                sprite = game.textures.deadFrog;
+                if (e->animate.frame > e->animate.frames)
+                    sprite = game.textures.dead;
+                else
+                {
+                    sprite = e->animate.sprite;
+                    sprite.x += e->textureOffset.x;
+                    sprite.y += e->textureOffset.y;
+                }
                 angle = 0;
             }
             else
             {
-                angle = e->angle;
                 sprite = e->sprite;
+                angle = e->angle;
                 sprite.x += e->textureOffset.x;
                 sprite.y += e->textureOffset.y;
             }
+
 
             DrawSpriteOnCircle(&game.textures.atlas, sprite, e->position, GRID_UNIT/2, angle);
             if (e->isWrapping)
@@ -713,6 +743,8 @@ Vector2 GetGridPosition(int col, int row)
 void KillFrog(void)
 {
     game.frog->isDead = true;
-    game.deathTimer = 0.5f;
+    game.frog->animate.frame = 0;
+    game.deathTimer = 1.5f;
+    game.frog->textureOffset.y = game.frog->animate.offset.y; // default land death animation
     game.lives--;
 }
