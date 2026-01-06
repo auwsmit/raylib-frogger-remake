@@ -242,6 +242,6 @@ void DrawLives(void);
 void DrawDebugInfo(void);
 
 // Other
-void SetTimedMessage(char *message, int fontSize, float time);
+void SetTimedMessage(char *message, int fontSize, float time, Color color);
 
 #endif // FROGGER_UI_HEADER_GUARD

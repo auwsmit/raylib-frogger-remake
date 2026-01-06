@@ -836,7 +836,7 @@ void DrawDebugInfo(void)
 
 // Other
 // ----------------------------------------------------------------------------
-void SetTimedMessage(char *message, int fontSize, float time)
+void SetTimedMessage(char *message, int fontSize, float time, Color color)
 {
     ui.messageTimer = time;
     int messageLength = MeasureText(message, fontSize);
@@ -844,6 +844,6 @@ void SetTimedMessage(char *message, int fontSize, float time)
     ui.timedMessage = (UiText){ .text = message,
         .position = { (float)(VIRTUAL_WIDTH - messageLength)/2, (float)(VIRTUAL_HEIGHT - fontSize)/2 },
         .fontSize = fontSize,
-        .color = RAYWHITE
+        .color = color
     };
 }

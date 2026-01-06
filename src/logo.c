@@ -19,7 +19,7 @@ void InitRaylibLogo(void)
         .rightSideRecHeight = RAYLIB_LOGO_OUTLINE,
 
         .state = LOGO_START, // State machine
-        .alpha = 0.0f, // Useful for fading
+        .alpha = 1.0f, // Useful for fading
     };
 }
 
@@ -28,12 +28,11 @@ void UpdateRaylibLogo(void)
     const float growSpeed = RAYLIB_LOGO_WIDTH*0.9375f; // Speed that lines grow
     const float letterDelay = 0.2f; // Time between each letter appearing
     const float fadeSpeed = 1.0f; // Fade out in 1 second
-    const float epsilon = 0.0001f;
 
     // Press any key/button or touch to skip
     if (input.anyInputPressed)
     {
-        if ((logo.lettersCount < 6) && (logo.alpha < epsilon))
+        if ((logo.lettersCount < 6) && (logo.alpha >= 1.0f))
         {
             logo.skipped = true;
             logo.topSideRecWidth = RAYLIB_LOGO_WIDTH;
@@ -108,10 +107,10 @@ void UpdateRaylibLogo(void)
             // When all letters have appeared, just fade out everything
             if (logo.lettersCount >= 10)
             {
-                logo.alpha += fadeSpeed*game.frameTime;
-                if (logo.alpha >= 1.0f)
+                logo.alpha -= fadeSpeed*game.frameTime;
+                if (logo.alpha < EPSILON)
                 {
-                    logo.alpha = 1.0f;
+                    logo.alpha = 0.0f;
                     logo.state = LOGO_PAUSE;
                     logo.elapsedTime = 0.0f;
                 }
@@ -146,45 +145,45 @@ void DrawRaylibLogo(void)
     int rightHeight = (int)logo.rightSideRecHeight;
     int bottomWidth = (int)logo.bottomSideRecWidth;
 
+    Color logoColor = Fade(RAYLIB_LOGO_COLOR, logo.alpha);
+
     ClearBackground(RAYLIB_LOGO_BACKGROUND);
 
     if (logo.state < LOGO_PAUSE)
         DrawText("powered by",
                  (int)((VIRTUAL_WIDTH/2) - (RAYLIB_LOGO_WIDTH/2)),
                  (int)((VIRTUAL_HEIGHT/2) - (RAYLIB_LOGO_WIDTH/2) - offsetB - lineWidth/4),
-                 (int)(fontSize/2), RAYLIB_LOGO_COLOR);
+                 (int)(fontSize/2), logoColor);
 
     switch (logo.state)
     {
         case LOGO_START:
             if (((int)(logo.elapsedTime*4)) % 2)
-                DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, RAYLIB_LOGO_COLOR);
+                DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, logoColor);
             else
                 DrawRectangle(rectPosX, rectPosY, lineWidth, lineWidth, RAYLIB_LOGO_BACKGROUND);
             break;
         case LOGO_GROW1:
-            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYLIB_LOGO_COLOR);
-            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, logoColor);
+            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, logoColor);
             break;
         case LOGO_GROW2:
-            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYLIB_LOGO_COLOR);
-            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, logoColor);
+            DrawRectangle(rectPosX, rectPosY, lineWidth, leftHeight, logoColor);
 
-            DrawRectangle(rectPosX + offsetA, rectPosY, lineWidth, rightHeight, RAYLIB_LOGO_COLOR);
-            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX + offsetA, rectPosY, lineWidth, rightHeight, logoColor);
+            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, logoColor);
             break;
         case LOGO_TEXT:
-            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, RAYLIB_LOGO_COLOR);
-            DrawRectangle(rectPosX, rectPosY + lineWidth, lineWidth, leftHeight - offsetB, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX, rectPosY, topWidth, lineWidth, logoColor);
+            DrawRectangle(rectPosX, rectPosY + lineWidth, lineWidth, leftHeight - offsetB, logoColor);
 
-            DrawRectangle(rectPosX + offsetA, rectPosY + lineWidth, lineWidth, rightHeight - offsetB, RAYLIB_LOGO_COLOR);
-            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, RAYLIB_LOGO_COLOR);
+            DrawRectangle(rectPosX + offsetA, rectPosY + lineWidth, lineWidth, rightHeight - offsetB, logoColor);
+            DrawRectangle(rectPosX, rectPosY + offsetA, bottomWidth, lineWidth, logoColor);
 
             DrawText(TextSubtext("raylib", 0, logo.lettersCount),
-                     VIRTUAL_WIDTH/2 - offsetC, VIRTUAL_HEIGHT/2 + offsetD,
-                     fontSize, RAYLIB_LOGO_COLOR);
+                     VIRTUAL_WIDTH/2 - offsetC, VIRTUAL_HEIGHT/2 + offsetD, fontSize, logoColor);
 
-            DrawRectangle(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, Fade(RAYLIB_LOGO_BACKGROUND, logo.alpha));
             break;
         case LOGO_PAUSE:
             break;

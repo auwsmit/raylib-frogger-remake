@@ -11,7 +11,7 @@
 #define GRID_UNIT 38.0f // size of a grid square
 #define GRID_WIDTH (GRID_UNIT*GRID_RES_X)
 #define GRID_HEIGHT (GRID_UNIT*GRID_RES_Y)
-#define BG_COLOR ColorBrightness(DARKGREEN, -0.25f)
+#define BG_COLOR ColorBrightness(DARKGREEN, -0.35f)
 #define WATER_COLOR (Color){ 0x00, 0x04, 0x4a, 255 }
 #define SPRITE_SIZE 16
 
@@ -114,9 +114,11 @@ typedef struct {
 
     Entity *entities;
     Entity *frog; // player frog
+
     int winCount;
+    int winIndex;
     int lives;
-    bool gameOver;
+    bool gameOver, gameWon;
     float waitTimer;
     float freezeTimer;
     float deathTimer;
