@@ -17,14 +17,18 @@ set(CMAKE_VERBOSE_MAKEFILE ON) # show build commands
 
 # Download and build raylib if needed
 # -----------------------------------------------------------------------------
-set(RAYLIB_VERSION 5.5)
-find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
+# set(RAYLIB_VERSION 5.5)
+# find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
+find_package(raylib QUIET) # QUIET or REQUIRED
 if (NOT raylib_FOUND)
   include(FetchContent)
   FetchContent_Declare(
     raylib
-    DOWNLOAD_EXTRACT_TIMESTAMP OFF
-    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+    # DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    # URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+    GIT_REPOSITORY https://github.com/raysan5/raylib.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE
   )
   FetchContent_GetProperties(raylib)
   if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
