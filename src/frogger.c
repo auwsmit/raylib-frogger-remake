@@ -18,6 +18,8 @@ void InitGameState(void)
     game.lives = 5;
     game.isDebugMode = DEBUG_DEFAULT;
 
+    game.fly.spawnTimer = GetRandomValue(5, 10);
+
     // Set up game grid positions
     Vector2 gridOffset = {
         VIRTUAL_WIDTH/2 - GRID_UNIT*GRID_RES_X/2,
@@ -49,6 +51,7 @@ void InitGameState(void)
     game.textures.dying       = (Rectangle){ 0,   s*3,    s,   s      };
     game.textures.turtle      = (Rectangle){ 0,   s*5,    s,   s      };
     game.textures.turtleSink  = (Rectangle){ s*3, s*5,    s,   s      };
+    game.textures.fly         = (Rectangle){ s*2, s*6,    s,   s      };
     game.textures.winFrog     = (Rectangle){ s*3, s*6,    s,   s      };
     game.textures.log         = (Rectangle){ s*6, s*8,    s,   s      };
     game.textures.life        = (Rectangle){ s*3, s,      s/2, s/2    };
@@ -63,6 +66,7 @@ void InitGameState(void)
     int spawnRow = 2;
     CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
     CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
+    CreateRow(ENTITY_TYPE_FLY,    spawnRow,   "._O__O__O__O__O_.",  0);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", BASE_SPEED);
     CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -BASE_SPEED);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  BASE_SPEED*2);
@@ -76,6 +80,17 @@ void InitGameState(void)
     CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  -BASE_SPEED*0.6f);
     CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  BASE_SPEED*0.4f);
     CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "______O___.O___.O", -BASE_SPEED*0.4f);
+
+    int flyCount = 0;
+    for (int i = 0; i < arrlen(game.entities); i++)
+    {
+        Entity *e = &game.entities[i];
+        if (e->type == ENTITY_TYPE_WIN)
+        {
+            game.fly.entityIdx[flyCount] = i;
+            flyCount++;
+        }
+    }
 
     // Frog
     Entity frog = {
@@ -91,8 +106,7 @@ void InitGameState(void)
         .animate.offset.y = s,
         .animate.length = 0.3f
     };
-    // Vector2 frogSpawnPos = GetGridPosition(8, 14);
-    Vector2 frogSpawnPos = GetGridPosition(8, 3);
+    Vector2 frogSpawnPos = GetGridPosition(8, 14);
     frog.position = frogSpawnPos;
     frog.position.x += GRID_UNIT/2;
     frog.position.y += GRID_UNIT/2 + GRID_UNIT/16;
@@ -210,6 +224,11 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
             game.winCount++;
         }
 
+        if (type == ENTITY_TYPE_FLY)
+        {
+            e.sprite = game.textures.fly;
+        }
+
         arrpush(game.entities, e);
     }
 }
@@ -255,11 +274,8 @@ void UpdateGameFrame(void)
         if ((game.winCount == 0) && !game.gameWon)
         {
             game.gameWon = true;
-            SetTimedMessage("Winner!", 100, 3.0f, YELLOW);
+            SetTimedMessage("WINNER!", 100, 3.0f, YELLOW);
             game.waitTimer = 3.5f;
-        }
-        if (game.gameWon && (game.winIndex < 5))
-        {
         }
         if (game.gameWon && (game.waitTimer < EPSILON))
         {
@@ -272,7 +288,7 @@ void UpdateGameFrame(void)
         if ((game.lives == 0) && !game.gameOver)
         {
             game.gameOver = true;
-            SetTimedMessage("Game Over!", 80, 2.0f, RED);
+            SetTimedMessage("GAME OVER!", 80, 2.0f, RED);
             game.waitTimer = 3.0f;
         }
         if (game.gameOver && (game.waitTimer < EPSILON))
@@ -295,6 +311,39 @@ void UpdateGameFrame(void)
             if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
             if (e->flags & ENTITY_FLAG_MOVE)     MoveEntity(e);
             if (e->isSinking)                    UpdateSinkingTurtle(e);
+        }
+
+        // Update flies
+        if (game.fly.idx == 0)
+        {
+            if (game.fly.spawnTimer < EPSILON)
+            {
+                game.fly.spawnTimer = (float)GetRandomValue(1, 10);
+                game.fly.despawnTimer = 3;
+                game.fly.idx = GetRandomValue(0, 5);
+                while (game.entities[game.fly.entityIdx[game.fly.idx]].isWin)
+                {
+                    game.fly.idx--;
+                    if (game.fly.idx == 0) break;
+                }
+            }
+            else
+                game.fly.spawnTimer -= game.frameTime;
+        }
+        else
+        {
+            // check fly collision
+            if (CheckCollisionPointRec(game.frog->position, game.entities[game.fly.entityIdx[game.fly.idx]].rec))
+            {
+                game.fly.despawnTimer = 0;
+            }
+
+            if (game.fly.despawnTimer > EPSILON)
+                game.fly.despawnTimer -= game.frameTime;
+            else
+            {
+                game.fly.idx = 0;
+            }
         }
 
         if (game.waitTimer > 0)
@@ -384,10 +433,10 @@ void UpdateFrog(void)
     if (!game.frog->isOnPlatform &&
         CheckCollisionPointRec(game.frog->position, game.background.water))
     {
-        // KillFrog();
-        // game.frog->isDrowned = true;
-        // game.frog->textureOffset.y = 0; // set to drown death animation
-        // return;
+        KillFrog();
+        game.frog->isDrowned = true;
+        game.frog->textureOffset.y = 0; // set to drown death animation
+        return;
     }
     game.frog->isOnPlatform = false;
 
@@ -494,7 +543,7 @@ void UpdateHostile(Entity *hostile)
     if (!game.frog->isDead &&
         CheckCollisionCircleRec(game.frog->position, game.frog->radius*0.75f, hostile->rec))
     {
-        // KillFrog();
+        KillFrog();
     }
 }
 
@@ -580,6 +629,7 @@ void DrawGameFrame(void)
     // Draw entities
     // ----------------------------------------------------------------------------
     const float s = SPRITE_SIZE;
+
     for (int i = 0; i < arrlen(game.entities); i++)
     {
         Entity *e = &game.entities[i];
@@ -589,9 +639,7 @@ void DrawGameFrame(void)
 
         // Draw grass on top of screen
         if (e->type == ENTITY_TYPE_WALL)
-        {
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
-        }
 
         // Win zones
         if (e->type == ENTITY_TYPE_WIN)
@@ -604,6 +652,8 @@ void DrawGameFrame(void)
             DrawSpriteOnRectangle(&game.textures.atlas, topGrass, grassRec, e->angle);
             if (e->isWin)
                 DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
+            else if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == i))
+                DrawSpriteOnRectangle(&game.textures.atlas, game.textures.fly, e->rec, e->angle);
         }
 
         if (e->type == ENTITY_TYPE_CAR || e->type == ENTITY_TYPE_TURTLE)

@@ -28,6 +28,7 @@ typedef enum {
     ENTITY_TYPE_FROG,
     ENTITY_TYPE_CAR,
     ENTITY_TYPE_TURTLE,
+    ENTITY_TYPE_FLY,
     ENTITY_TYPE_LOG,
     ENTITY_TYPE_WALL,
     ENTITY_TYPE_WIN,
@@ -55,7 +56,7 @@ typedef struct {
     Rectangle grassPurple, grassGreen,
               log, turtle, turtleSink, car,
               frog, dead, dying, winFrog,
-              life, level;
+              fly, life, level;
 } GameTextures;
 
 typedef struct {
@@ -106,6 +107,13 @@ typedef struct {
         Rectangle water;
         Rectangle grassMiddle, grassBottom;
     } background;
+
+    struct {
+        int entityIdx[5];
+        int idx;
+        float spawnTimer;
+        float despawnTimer;
+    } fly;
 
     RaylibAssets assets;
     // GameSounds sounds;
