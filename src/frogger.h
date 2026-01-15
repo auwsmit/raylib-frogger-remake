@@ -126,7 +126,10 @@ typedef struct {
     int winCount;
     int winIndex;
     int lives;
+    int score;
+    int rowsTravelled;
     bool gameOver, gameWon;
+    float prevFrogYPos;
     float waitTimer;
     float freezeTimer;
     float deathTimer;
@@ -160,7 +163,7 @@ void UpdateFrog(void);
 void UpdateSinkingTurtle(Entity *turtle);
 void UpdateHostile(Entity *hostile);
 void UpdatePlatform(Entity *platform);
-void UpdateWinZone(Entity *zone);
+void UpdateWinZone(Entity *zone, int entityIndex);
 void MoveEntity(Entity *e);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
 void DrawGrass(Rectangle grassRec);
@@ -168,5 +171,6 @@ void DrawGrass(Rectangle grassRec);
 // Misc
 Vector2 GetGridPosition(int row, int col);
 void KillFrog(void);
+void RespawnFrog(void);
 
 #endif // FROGGER_GAME_HEADER_GUARD

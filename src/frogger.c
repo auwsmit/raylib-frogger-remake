@@ -15,7 +15,7 @@ void InitGameState(void)
     game.camera.offset = (Vector2){ viewport.renderTexWidth/2, viewport.renderTexHeight/2 };
     game.camera.zoom = viewport.renderTexHeight/VIRTUAL_HEIGHT;
 
-    game.lives = 5;
+    game.lives = 4;
     game.isDebugMode = DEBUG_DEFAULT;
 
     game.fly.spawnTimer = GetRandomValue(5, 10);
@@ -113,6 +113,7 @@ void InitGameState(void)
     arrpush(game.entities, frog);
     game.frog = &arrlast(game.entities);
     game.spawnPos = frog.position;
+    game.prevFrogYPos = frog.position.y;
 
     // Background rectangles
     game.background.water.x = game.gridStart.x;
@@ -306,7 +307,7 @@ void UpdateGameFrame(void)
             Entity *e = &game.entities[i];
 
             if (e->type == ENTITY_TYPE_FROG)     UpdateFrog();
-            if (e->type == ENTITY_TYPE_WIN)      UpdateWinZone(e);
+            if (e->type == ENTITY_TYPE_WIN)      UpdateWinZone(e, i);
             if (e->flags & ENTITY_FLAG_KILL)     UpdateHostile(e);
             if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
             if (e->flags & ENTITY_FLAG_MOVE)     MoveEntity(e);
@@ -332,12 +333,6 @@ void UpdateGameFrame(void)
         }
         else
         {
-            // check fly collision
-            if (CheckCollisionPointRec(game.frog->position, game.entities[game.fly.entityIdx[game.fly.idx]].rec))
-            {
-                game.fly.despawnTimer = 0;
-            }
-
             if (game.fly.despawnTimer > EPSILON)
                 game.fly.despawnTimer -= game.frameTime;
             else
@@ -346,6 +341,7 @@ void UpdateGameFrame(void)
             }
         }
 
+        // global game wait timer (player cannot move)
         if (game.waitTimer > 0)
             game.waitTimer -= game.frameTime;
 
@@ -413,18 +409,11 @@ void UpdateFrog(void)
         else game.frog->animate.timer -= game.frameTime;
         game.frog->textureOffset.x = game.frog->animate.offset.x*(game.frog->animate.frame - 1);
 
+
         game.deathTimer -= game.frameTime;
 
         if ((game.deathTimer < 0) && !game.gameOver)
-        {
-            game.frog->position = game.spawnPos;
-            game.frog->seekPos = game.spawnPos;
-            game.frog->bufferPos= game.spawnPos;
-            game.frog->isDead = false;
-            game.frog->isDrowned = false;
-            game.frog->textureOffset.y = 0;
-            game.frog->textureOffset.x = 0;
-        }
+            RespawnFrog();
 
         return; // no update
     }
@@ -443,6 +432,14 @@ void UpdateFrog(void)
     // frog reached next seek position
     if (game.frog->isMoving && Vector2Equals(game.frog->position, game.frog->seekPos))
     {
+        // +10 points for moving forward
+        if (game.frog->position.y < game.prevFrogYPos)
+        {
+            game.prevFrogYPos = game.frog->position.y;
+            game.rowsTravelled++;
+            game.score += 10;
+        }
+
         // move to possible buffered position
         if (game.frog->isMoveBuffered)
         {
@@ -461,6 +458,7 @@ void UpdateFrog(void)
     if (moveInput && (game.waitTimer < EPSILON))
     {
         Vector2 moveVector = Vector2Zero();
+
         if      (input.player.moveUp)    moveVector.y -= GRID_UNIT;
         else if (input.player.moveDown)  moveVector.y += GRID_UNIT;
         else if (input.player.moveLeft)  moveVector.x -= GRID_UNIT;
@@ -482,6 +480,7 @@ void UpdateFrog(void)
             game.frog->isMoving = true;
             game.frog->seekPos = newSeekPos;
         }
+
         // set buffered position
         else if (!game.frog->isMoveBuffered && !Vector2Equals(game.frog->bufferPos, newBufferPos))
         {
@@ -574,17 +573,16 @@ void UpdatePlatform(Entity *platform)
     }
 }
 
-void UpdateWinZone(Entity *zone)
+void UpdateWinZone(Entity *zone, int entityIndex)
 {
     if (!zone->isWin && CheckCollisionPointRec(game.frog->position, zone->rec))
     {
+        if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == entityIndex))
+            game.score += 200;
         zone->isWin = true;
         zone->flags |= ENTITY_FLAG_KILL;
         game.winCount--;
-        game.frog->isWin = false;
-        game.frog->position = game.spawnPos;
-        game.frog->seekPos = game.spawnPos;
-        game.frog->bufferPos= game.spawnPos;
+        RespawnFrog();
     }
 
     if (game.gameWon)
@@ -764,14 +762,14 @@ void DrawGameFrame(void)
 
     // Draw HUD
     // ----------------------------------------------------------------------------
-    char *scoreLabel = "HI-SCORE";
+    char *scoreLabel = "SCORE";
     float fontSize = GRID_UNIT*0.5f;
     Vector2 fontMeasure = MeasureTextEx(game.font, scoreLabel, fontSize, 0);
     float textPosX = (VIRTUAL_WIDTH - fontMeasure.x)/2;
     float textPosY = game.gridStart.y;
     Vector2 textPos = { textPosX, textPosY };
     DrawTextEx(game.font, scoreLabel, textPos, fontSize, 0, WHITE);
-    DrawTextEx(game.font, "TODO", Vector2Add(textPos, (Vector2){ 0, fontMeasure.y }), fontSize, 0, WHITE);
+    DrawTextEx(game.font, TextFormat("%i", game.score), Vector2Add(textPos, (Vector2){ 0, fontMeasure.y }), fontSize, 0, WHITE);
 
     Vector2 lifePos = game.gridStart;
     lifePos.x += GRID_UNIT;
@@ -811,3 +809,16 @@ void KillFrog(void)
     game.frog->textureOffset.y = game.frog->animate.offset.y; // default land death animation
     game.lives--;
 }
+
+void RespawnFrog(void)
+{
+    game.frog->position = game.spawnPos;
+    game.frog->seekPos = game.spawnPos;
+    game.frog->bufferPos= game.spawnPos;
+    game.frog->isWin = false;
+    game.frog->isDead = false;
+    game.frog->isDrowned = false;
+    game.frog->textureOffset.y = 0;
+    game.frog->textureOffset.x = 0;
+    game.prevFrogYPos = game.spawnPos.y;
+    game.rowsTravelled = 0;}
