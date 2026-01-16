@@ -83,7 +83,7 @@ typedef struct {
     Color color;
     Vector2 position;
     Vector2 measure;
-    int fontSize;
+    float fontSize;
     const char *text;
 } UiText;
 
@@ -210,8 +210,8 @@ extern UiState ui; // global declaration
 // Initialize
 void InitUiState(void); // Initializes the title screen and allocates memory for menu buttons
 UiButton InitUiButton(char *text, UiActionFunc actionFunc, float x, float y, float buttonWidth, int fontSize); // creates a default UI button
+void CreateUiTextEx(Font font, char *text, float x, float y, float fontSize);
 void CreateUiText(char *text, float x, float y, int fontSize);
-void CreateUiTextEx(Font font, char *text, float x, float y, int fontSize);
 UiButton InitUiInputButton(char *text, int inputActionId, float textPosX, float textPosY, float radius);
 void CreateUiCheckbox(UiGetBoolFunc getValue);
 void CreateUiSlider(UiSetFloatFunc setValue, UiGetFloatFunc getValue, float minValue, float maxValue, float increment);
@@ -250,6 +250,6 @@ void DrawUiAnalogStick(UiAnalogStick *stick); // Draw touch analog stick
 void DrawDebugInfo(void);
 
 // Other
-void SetTimedMessage(char *message, int fontSize, float time, Color color);
+void SetTimedMessage(char *message, float fontSize, float time, Color color);
 
 #endif // FROGGER_UI_HEADER_GUARD

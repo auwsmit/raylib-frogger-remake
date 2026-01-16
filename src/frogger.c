@@ -19,7 +19,7 @@ void InitGameState(void)
     game.lives = 4;
     game.isDebugMode = DEBUG_DEFAULT;
 
-    game.fly.spawnTimer = GetRandomValue(3, 6);
+    game.fly.spawnTimer = (float)GetRandomValue(3, 6);
 
     // Set up game grid positions
     Vector2 gridOffset = {
@@ -489,7 +489,7 @@ void UpdateFrog(void)
         else game.frog->isMoving = false;
     }
 
-    if ((game.lives == 0)) return;
+    if (game.lives == 0) return;
 
     // set movement vector
     bool moveInput = (input.player.moveUp   || input.player.moveDown ||

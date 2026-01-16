@@ -165,7 +165,7 @@ UiButton InitUiButton(char *text, UiActionFunc actionFunc, float x, float y, flo
     return button;
 }
 
-void CreateUiTextEx(Font font, char *text, float x, float y, int fontSize)
+void CreateUiTextEx(Font font, char *text, float x, float y, float fontSize)
 {
     Vector2 measure = MeasureTextEx(font, text, fontSize, 0);
     if (ui.hAlign != UI_ALIGN_DISABLED)
@@ -187,7 +187,7 @@ void CreateUiTextEx(Font font, char *text, float x, float y, int fontSize)
 
 void CreateUiText(char *text, float x, float y, int fontSize)
 {
-    CreateUiTextEx(GetFontDefault(), text, x, y, fontSize);
+    CreateUiTextEx(GetFontDefault(), text, x, y, (float)fontSize);
 }
 
 UiButton *CreateUiMenuButton(char *text, UiActionFunc actionFunc, float x, float y)
@@ -671,7 +671,7 @@ void DrawUiFrame(void)
         {
             UiText *textElem = &menu->text[i];
             DrawText(textElem->text, (int)textElem->position.x, (int)textElem->position.y,
-                     textElem->fontSize, textElem->color);
+                     (int)textElem->fontSize, textElem->color);
         }
     }
 
@@ -681,7 +681,7 @@ void DrawUiFrame(void)
     {
         if (!game.isPaused && ui.messageTimer > 0)
             DrawText(ui.timedMessage.text, (int)ui.timedMessage.position.x, (int)ui.timedMessage.position.y,
-                     ui.timedMessage.fontSize, ui.timedMessage.color);
+                     (int)ui.timedMessage.fontSize, ui.timedMessage.color);
     }
 
     // Debug info
@@ -848,10 +848,10 @@ void DrawDebugInfo(void)
 
 // Other
 // ----------------------------------------------------------------------------
-void SetTimedMessage(char *message, int fontSize, float time, Color color)
+void SetTimedMessage(char *message, float fontSize, float time, Color color)
 {
     ui.messageTimer = time;
-    int messageLength = MeasureText(message, fontSize);
+    int messageLength = MeasureText(message, (int)fontSize);
 
     ui.timedMessage = (UiText){ .text = message,
         .position = { (float)(VIRTUAL_WIDTH - messageLength)/2, (float)(VIRTUAL_HEIGHT - fontSize)/2 },
