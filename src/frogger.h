@@ -125,8 +125,10 @@ typedef struct {
 
     int winCount;
     int winIndex;
+    int level;
     int lives;
     int score;
+    int hiScore;
     int rowsTravelled;
     bool gameOver, gameWon;
     float prevFrogYPos;
@@ -155,6 +157,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed); // create 
                                                                       // O full width
                                                                       // F fast sinking turtle
                                                                       // S slow sinking turtle
+void CreateNextLevel(void);
 void FreeGameState(void);
 
 // Update & Draw

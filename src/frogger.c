@@ -15,10 +15,11 @@ void InitGameState(void)
     game.camera.offset = (Vector2){ viewport.renderTexWidth/2, viewport.renderTexHeight/2 };
     game.camera.zoom = viewport.renderTexHeight/VIRTUAL_HEIGHT;
 
+    game.level = 1;
     game.lives = 4;
     game.isDebugMode = DEBUG_DEFAULT;
 
-    game.fly.spawnTimer = GetRandomValue(5, 10);
+    game.fly.spawnTimer = GetRandomValue(3, 6);
 
     // Set up game grid positions
     Vector2 gridOffset = {
@@ -43,54 +44,43 @@ void InitGameState(void)
     game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
     SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
     const float s = SPRITE_SIZE;
-    game.textures.car         = (Rectangle){ s*3, 0,      s,   s      };
-    game.textures.frog        = (Rectangle){ 0,   0,      s,   s      };
-    game.textures.grassPurple = (Rectangle){ s*3, s*2,    s,   s      };
-    game.textures.grassGreen  = (Rectangle){ s*4, s*1.5f, s,   s*1.5f };
-    game.textures.dead        = (Rectangle){ s*3, s*3,    s,   s      };
-    game.textures.dying       = (Rectangle){ 0,   s*3,    s,   s      };
-    game.textures.turtle      = (Rectangle){ 0,   s*5,    s,   s      };
-    game.textures.turtleSink  = (Rectangle){ s*3, s*5,    s,   s      };
-    game.textures.fly         = (Rectangle){ s*2, s*6,    s,   s      };
-    game.textures.winFrog     = (Rectangle){ s*3, s*6,    s,   s      };
-    game.textures.log         = (Rectangle){ s*6, s*8,    s,   s      };
-    game.textures.life        = (Rectangle){ s*3, s,      s/2, s/2    };
-    game.textures.level       = (Rectangle){ s*6, s*8,    s,   s      };
+    game.textures.car         = (Rectangle){ s*3,    0,      s,   s      };
+    game.textures.frog        = (Rectangle){ 0,      0,      s,   s      };
+    game.textures.grassPurple = (Rectangle){ s*3,    s*2,    s,   s      };
+    game.textures.grassGreen  = (Rectangle){ s*4,    s*1.5f, s,   s*1.5f };
+    game.textures.dead        = (Rectangle){ s*3,    s*3,    s,   s      };
+    game.textures.dying       = (Rectangle){ 0,      s*3,    s,   s      };
+    game.textures.turtle      = (Rectangle){ 0,      s*5,    s,   s      };
+    game.textures.turtleSink  = (Rectangle){ s*3,    s*5,    s,   s      };
+    game.textures.fly         = (Rectangle){ s*2,    s*6,    s,   s      };
+    game.textures.winFrog     = (Rectangle){ s*3,    s*6,    s,   s      };
+    game.textures.log         = (Rectangle){ s*6,    s*8,    s,   s      };
+    game.textures.life        = (Rectangle){ s*3,    s,      s/2, s/2    };
+    game.textures.level       = (Rectangle){ s*3.5f, s,      s/2, s/2    };
 
     game.font = LoadFont("assets/fonts/PressStart2P.ttf");
 
-    // Create entities
-    // ----------------------------------------------------------------------------
+    UiText score = { 0 };
+    score.text = "SCORE";
+    score.fontSize = GRID_UNIT*0.5f,
+    score.measure = MeasureTextEx(game.font, score.text, score.fontSize, 0);
+    score.position = (Vector2){ game.gridStart.x + GRID_UNIT*2.5f, game.gridStart.y };
+    score.color = WHITE;
+    UiText scoreNum = score;
+    scoreNum.position.y += scoreNum.measure.y;
+    scoreNum.position.x = GetGridPosition(3, 0).x;
+    ui.score = score;
+    ui.scoreNum = scoreNum;
 
-    // Logs and Turtles
-    int spawnRow = 2;
-    CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
-    CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
-    CreateRow(ENTITY_TYPE_FLY,    spawnRow,   "._O__O__O__O__O_.",  0);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", BASE_SPEED);
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -BASE_SPEED);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  BASE_SPEED*2);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  BASE_SPEED*0.5f);
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -BASE_SPEED);
-
-    // Cars
-    spawnRow = 9;
-    CreateRow(ENTITY_TYPE_CAR, spawnRow,   "________.OO___.OO", -BASE_SPEED);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "O_______________",  BASE_SPEED*0.6f);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  -BASE_SPEED*0.6f);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  BASE_SPEED*0.4f);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "______O___.O___.O", -BASE_SPEED*0.4f);
-
-    int flyCount = 0;
-    for (int i = 0; i < arrlen(game.entities); i++)
-    {
-        Entity *e = &game.entities[i];
-        if (e->type == ENTITY_TYPE_WIN)
-        {
-            game.fly.entityIdx[flyCount] = i;
-            flyCount++;
-        }
-    }
+    UiText hiScore = score;
+    hiScore.text = "HI-SCORE";
+    hiScore.measure = MeasureTextEx(game.font, hiScore.text, hiScore.fontSize, 0);
+    hiScore.position = (Vector2){ (VIRTUAL_WIDTH - hiScore.measure.x)/2, game.gridStart.y };
+    UiText hiScoreNum = hiScore;
+    hiScoreNum.position.y += hiScoreNum.measure.y;
+    hiScoreNum.position.x = GetGridPosition(6, 0).x + GRID_UNIT/2;
+    ui.hiScore = hiScore;
+    ui.hiScoreNum = hiScoreNum;
 
     // Frog
     Entity frog = {
@@ -114,6 +104,19 @@ void InitGameState(void)
     game.frog = &arrlast(game.entities);
     game.spawnPos = frog.position;
     game.prevFrogYPos = frog.position.y;
+
+    CreateNextLevel();
+
+    int flyCount = 0;
+    for (int i = 0; i < arrlen(game.entities); i++)
+    {
+        Entity *e = &game.entities[i];
+        if (e->type == ENTITY_TYPE_WIN)
+        {
+            game.fly.entityIdx[flyCount] = i;
+            flyCount++;
+        }
+    }
 
     // Background rectangles
     game.background.water.x = game.gridStart.x;
@@ -234,6 +237,43 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
     }
 }
 
+void CreateNextLevel(void)
+{
+    game.gameOver = false;
+    game.gameWon = false;
+
+    Entity frog = *game.frog;
+    if (game.entities) arrfree(game.entities);
+
+    float speed = BASE_SPEED;
+    if (game.level > 1) speed *= game.level*0.7f; // TEMP until more level layouts
+
+    // Win zones
+    int spawnRow = 2;
+    CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
+    CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
+    CreateRow(ENTITY_TYPE_FLY,    spawnRow,   "._O__O__O__O__O_.",  0);
+
+    // River (logs, turtles, etc)
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", speed*0.8f);
+    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -speed);
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  speed*2);
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f);
+    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -speed);
+
+    // Road, Cars
+    spawnRow = 9;
+    CreateRow(ENTITY_TYPE_CAR, spawnRow,   "________.OO___.OO", -speed);
+    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "O_______________",  speed*0.6f);
+    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  -speed*0.6f);
+    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  speed*0.4f);
+    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "______O___.O___.O", -speed*0.4f);
+
+    arrpush(game.entities, frog);
+    game.frog = &arrlast(game.entities);
+    RespawnFrog();
+}
+
 void FreeGameState(void)
 {
     FreeRaylibAssets(&game.assets);
@@ -280,10 +320,15 @@ void UpdateGameFrame(void)
         }
         if (game.gameWon && (game.waitTimer < EPSILON))
         {
-            FreeGameState();
-            InitGameState();
-            game.currentScreen = SCREEN_GAMEPLAY;
+            game.level++;
+            CreateNextLevel();
         }
+
+        // Update score
+        if (game.score > game.hiScore)
+            game.hiScore = game.score;
+        ui.scoreNum.text = TextFormat("%i", game.score);
+        ui.hiScoreNum.text = TextFormat("%i", game.hiScore);
 
         // Game over condition
         if ((game.lives == 0) && !game.gameOver)
@@ -294,19 +339,19 @@ void UpdateGameFrame(void)
         }
         if (game.gameOver && (game.waitTimer < EPSILON))
         {
-            bool debug = game.isDebugMode;
-            FreeGameState();
-            InitGameState();
-            game.isDebugMode = debug;
-            game.currentScreen = SCREEN_GAMEPLAY;
+            game.level = 1;
+            game.score = 0;
+            game.lives = 4;
+            CreateNextLevel();
         }
 
         // Update entities
+        UpdateFrog();
+
         for (int i = 0; i < arrlen(game.entities); i++)
         {
             Entity *e = &game.entities[i];
 
-            if (e->type == ENTITY_TYPE_FROG)     UpdateFrog();
             if (e->type == ENTITY_TYPE_WIN)      UpdateWinZone(e, i);
             if (e->flags & ENTITY_FLAG_KILL)     UpdateHostile(e);
             if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
@@ -322,11 +367,6 @@ void UpdateGameFrame(void)
                 game.fly.spawnTimer = (float)GetRandomValue(1, 10);
                 game.fly.despawnTimer = 3;
                 game.fly.idx = GetRandomValue(0, 5);
-                while (game.entities[game.fly.entityIdx[game.fly.idx]].isWin)
-                {
-                    game.fly.idx--;
-                    if (game.fly.idx == 0) break;
-                }
             }
             else
                 game.fly.spawnTimer -= game.frameTime;
@@ -577,8 +617,9 @@ void UpdateWinZone(Entity *zone, int entityIndex)
 {
     if (!zone->isWin && CheckCollisionPointRec(game.frog->position, zone->rec))
     {
+        game.score += 50; // win score
         if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == entityIndex))
-            game.score += 200;
+            game.score += 200; // fly score
         zone->isWin = true;
         zone->flags |= ENTITY_FLAG_KILL;
         game.winCount--;
@@ -762,23 +803,29 @@ void DrawGameFrame(void)
 
     // Draw HUD
     // ----------------------------------------------------------------------------
-    char *scoreLabel = "SCORE";
-    float fontSize = GRID_UNIT*0.5f;
-    Vector2 fontMeasure = MeasureTextEx(game.font, scoreLabel, fontSize, 0);
-    float textPosX = (VIRTUAL_WIDTH - fontMeasure.x)/2;
-    float textPosY = game.gridStart.y;
-    Vector2 textPos = { textPosX, textPosY };
-    DrawTextEx(game.font, scoreLabel, textPos, fontSize, 0, WHITE);
-    DrawTextEx(game.font, TextFormat("%i", game.score), Vector2Add(textPos, (Vector2){ 0, fontMeasure.y }), fontSize, 0, WHITE);
+    DrawUiText(game.font, ui.score);
+    DrawUiText(game.font, ui.scoreNum);
+    DrawUiText(game.font, ui.hiScore);
+    DrawUiText(game.font, ui.hiScoreNum);
 
     Vector2 lifePos = game.gridStart;
     lifePos.x += GRID_UNIT;
     lifePos.y += GRID_HEIGHT - GRID_UNIT;
+    Rectangle lifeRec = { lifePos.x, lifePos.y, GRID_UNIT/2, GRID_UNIT/2 };
     for (int i = 0; i < game.lives; i++)
     {
-        Rectangle lifeRec = { lifePos.x, lifePos.y, GRID_UNIT/2, GRID_UNIT/2 };
-        DrawTexturePro(game.textures.atlas, game.textures.life, lifeRec, Vector2Zero(), 0, WHITE);
-        lifePos.x += GRID_UNIT/2;
+        DrawSpriteOnRectangle(&game.textures.atlas, game.textures.life, lifeRec, 0);
+        lifeRec.x += GRID_UNIT/2;
+    }
+
+    Vector2 levelPos = game.gridStart;
+    levelPos.x += GRID_WIDTH - GRID_UNIT*2;
+    levelPos.y += GRID_HEIGHT - GRID_UNIT;
+    Rectangle levelRec = { levelPos.x, levelPos.y, GRID_UNIT/2, GRID_UNIT/2 };
+    for (int i = 0; i < game.level; i++)
+    {
+        DrawSpriteOnRectangle(&game.textures.atlas, game.textures.level, levelRec, 0);
+        levelRec.x -= GRID_UNIT/2;
     }
 }
 
@@ -789,7 +836,7 @@ void DrawGrass(Rectangle grassRec)
 
     for (int i = 0; i < tileAmount; i++)
     {
-        DrawTexturePro(game.textures.atlas, game.textures.grassPurple, grassRec, Vector2Zero(), 0, WHITE);
+        DrawSpriteOnRectangle(&game.textures.atlas, game.textures.grassPurple, grassRec, 0);
         grassRec.x += GRID_UNIT;
     }
 }
@@ -821,4 +868,5 @@ void RespawnFrog(void)
     game.frog->textureOffset.y = 0;
     game.frog->textureOffset.x = 0;
     game.prevFrogYPos = game.spawnPos.y;
-    game.rowsTravelled = 0;}
+    game.rowsTravelled = 0;
+}

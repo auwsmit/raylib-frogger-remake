@@ -74,6 +74,8 @@ void InitUiState(void)
     if (PLATFORM_CAN_EXIT)
         CreateUiMenuButtonRelative("Exit Game", UiCallbackExit);
 
+    SetUiAlignMode(UI_ALIGN_DISABLED, UI_ALIGN_DISABLED);
+
     // Sound assets
     ui.sounds.menu =  LoadSoundAsset(&ui.assets, "assets/audio/menu_beep.wav");
 
@@ -163,15 +165,15 @@ UiButton InitUiButton(char *text, UiActionFunc actionFunc, float x, float y, flo
     return button;
 }
 
-void CreateUiText(char *text, float x, float y, int fontSize)
+void CreateUiTextEx(Font font, char *text, float x, float y, int fontSize)
 {
+    Vector2 measure = MeasureTextEx(font, text, fontSize, 0);
     if (ui.hAlign != UI_ALIGN_DISABLED)
     {
-        int textLength = MeasureText(text, fontSize);
-        x += Lerp(0.0f, (float)VIRTUAL_WIDTH - textLength, ((float)ui.hAlign)*0.5f);
+        x += Lerp(0.0f, (float)VIRTUAL_WIDTH - measure.x, ((float)ui.hAlign)*0.5f);
     }
     if (ui.vAlign != UI_ALIGN_DISABLED)
-        y += Lerp(0.0f, (float)VIRTUAL_HEIGHT - fontSize, ((float)ui.vAlign)*0.5f);
+        y += Lerp(0.0f, (float)VIRTUAL_HEIGHT - measure.y, ((float)ui.vAlign)*0.5f);
 
     UiText textElement = {
         .text = text,
@@ -181,6 +183,11 @@ void CreateUiText(char *text, float x, float y, int fontSize)
     };
 
     arrput(ui.menus[ui.initMenu].text, textElement);
+}
+
+void CreateUiText(char *text, float x, float y, int fontSize)
+{
+    CreateUiTextEx(GetFontDefault(), text, x, y, fontSize);
 }
 
 UiButton *CreateUiMenuButton(char *text, UiActionFunc actionFunc, float x, float y)
@@ -679,6 +686,11 @@ void DrawUiFrame(void)
 
     // Debug info
     if (game.isDebugMode) DrawDebugInfo();
+}
+
+void DrawUiText(Font font, UiText text)
+{
+    DrawTextEx(font, text.text, text.position, text.fontSize, 0, text.color);
 }
 
 void DrawUiGamepad(void)

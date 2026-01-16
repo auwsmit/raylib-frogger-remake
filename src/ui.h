@@ -82,6 +82,7 @@ typedef struct {
 typedef struct {
     Color color;
     Vector2 position;
+    Vector2 measure;
     int fontSize;
     const char *text;
 } UiText;
@@ -186,7 +187,13 @@ typedef struct {
     UiAlignment hAlign, vAlign; // alignment for new buttons
     UiButton *lastButtonCreated;
 
-    // Other / optional
+    // Game HUD
+    UiText score;
+    UiText scoreNum;
+    UiText hiScore;
+    UiText hiScoreNum;
+
+    // Miscellaneous
     UiText timedMessage;
     int timedMessageLength;
     float messageTimer;
@@ -204,6 +211,7 @@ extern UiState ui; // global declaration
 void InitUiState(void); // Initializes the title screen and allocates memory for menu buttons
 UiButton InitUiButton(char *text, UiActionFunc actionFunc, float x, float y, float buttonWidth, int fontSize); // creates a default UI button
 void CreateUiText(char *text, float x, float y, int fontSize);
+void CreateUiTextEx(Font font, char *text, float x, float y, int fontSize);
 UiButton InitUiInputButton(char *text, int inputActionId, float textPosX, float textPosY, float radius);
 void CreateUiCheckbox(UiGetBoolFunc getValue);
 void CreateUiSlider(UiSetFloatFunc setValue, UiGetFloatFunc getValue, float minValue, float maxValue, float increment);
@@ -231,13 +239,13 @@ int IsTouchWithinUiButton(UiButton *button);
 
 // Draw
 void DrawUiFrame(void); // Draws all the UI buttons for the current frame
+void DrawUiText(Font font, UiText text);
 void DrawUiGamepad(void);
 void DrawUiButton(UiButton *button);
 void DrawUiCursor(UiButton *selectedButton); // Draw the cursor at the given button
 void DrawUiInputButton(UiButton *button); // Draw touch input button
 void DrawUiDPad(UiDPad *dpad); // Draw touch directional pad
 void DrawUiAnalogStick(UiAnalogStick *stick); // Draw touch analog stick
-void DrawLives(void);
 
 void DrawDebugInfo(void);
 

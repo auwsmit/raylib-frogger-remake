@@ -43,8 +43,10 @@ void UiCallbackGoToTitle(void)
     // Reset game state if returning from gameplay
     if (game.currentScreen == SCREEN_GAMEPLAY)
     {
+        int hiScore = game.hiScore;
         FreeGameState();
         InitGameState();
+        game.hiScore = hiScore;
     }
 }
 
