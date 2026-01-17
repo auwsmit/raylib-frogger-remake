@@ -675,15 +675,6 @@ void DrawUiFrame(void)
         }
     }
 
-    // Gameplay UI
-    // ----------------------------------------------------------------------------
-    if (game.currentScreen == SCREEN_GAMEPLAY)
-    {
-        if (!game.isPaused && ui.messageTimer > 0)
-            DrawText(ui.timedMessage.text, (int)ui.timedMessage.position.x, (int)ui.timedMessage.position.y,
-                     (int)ui.timedMessage.fontSize, ui.timedMessage.color);
-    }
-
     // Debug info
     if (game.isDebugMode) DrawDebugInfo();
 }
@@ -846,16 +837,14 @@ void DrawDebugInfo(void)
     }
 }
 
-// Other
+// Frogger
 // ----------------------------------------------------------------------------
-void SetTimedMessage(char *message, float fontSize, float time, Color color)
+void SetTimedMessage(char *message, float time, Color color)
 {
     ui.messageTimer = time;
-    int messageLength = MeasureText(message, (int)fontSize);
-
-    ui.timedMessage = (UiText){ .text = message,
-        .position = { (float)(VIRTUAL_WIDTH - messageLength)/2, (float)(VIRTUAL_HEIGHT - fontSize)/2 },
-        .fontSize = fontSize,
-        .color = color
-    };
+    Vector2 measure = MeasureTextEx(game.font, message, ui.timedMessage.fontSize, 0);
+    ui.timedMessage.measure = measure;
+    ui.timedMessage.text = message;
+    ui.timedMessage.position = (Vector2){ (float)(VIRTUAL_WIDTH - measure.x)/2, (float)(VIRTUAL_HEIGHT - measure.y)/2 };
+    ui.timedMessage.color = color;
 }

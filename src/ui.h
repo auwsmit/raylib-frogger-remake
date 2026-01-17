@@ -250,6 +250,6 @@ void DrawUiAnalogStick(UiAnalogStick *stick); // Draw touch analog stick
 void DrawDebugInfo(void);
 
 // Other
-void SetTimedMessage(char *message, float fontSize, float time, Color color);
+void SetTimedMessage(char *message, float time, Color color);
 
 #endif // FROGGER_UI_HEADER_GUARD

@@ -38,8 +38,6 @@ void InitGameState(void)
 
     game.gridStart = GetGridPosition(0, 0);
 
-    SetTimedMessage("GAME START!", 80, 2.0f, YELLOW);
-
     // Textures
     game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
     SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
@@ -60,19 +58,21 @@ void InitGameState(void)
 
     game.font = LoadFont("assets/fonts/PressStart2P.ttf");
 
-    UiText score = { 0 };
+    UiText defaultFont = {
+        .fontSize = GRID_UNIT*0.5f,
+        .color = WHITE,
+    };
+    UiText score = defaultFont;
     score.text = "SCORE";
-    score.fontSize = GRID_UNIT*0.5f,
     score.measure = MeasureTextEx(game.font, score.text, score.fontSize, 0);
     score.position = (Vector2){ game.gridStart.x + GRID_UNIT*2.5f, game.gridStart.y };
-    score.color = WHITE;
     UiText scoreNum = score;
     scoreNum.position.y += scoreNum.measure.y;
     scoreNum.position.x = GetGridPosition(3, 0).x;
     ui.score = score;
     ui.scoreNum = scoreNum;
 
-    UiText hiScore = score;
+    UiText hiScore = defaultFont;
     hiScore.text = "HI-SCORE";
     hiScore.measure = MeasureTextEx(game.font, hiScore.text, hiScore.fontSize, 0);
     hiScore.position = (Vector2){ (VIRTUAL_WIDTH - hiScore.measure.x)/2, game.gridStart.y };
@@ -81,6 +81,9 @@ void InitGameState(void)
     hiScoreNum.position.x = GetGridPosition(6, 0).x + GRID_UNIT/2;
     ui.hiScore = hiScore;
     ui.hiScoreNum = hiScoreNum;
+
+    ui.timedMessage = defaultFont;
+    SetTimedMessage("GAME START", 3.0f, YELLOW);
 
     // Frog
     Entity frog = {
@@ -239,6 +242,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
 
 void CreateNextLevel(void)
 {
+    game.winCount = 0;
     game.gameOver = false;
     game.gameWon = false;
 
@@ -289,6 +293,9 @@ void UpdateGameFrame(void)
     if (IsKeyPressed(KEY_K))
         KillFrog();
 
+    if (IsKeyPressed(KEY_L))
+        game.winCount--;
+
     // Pause
     if (input.player.pause || (game.isPaused && input.menu.cancel))
     {
@@ -315,7 +322,7 @@ void UpdateGameFrame(void)
         if ((game.winCount == 0) && !game.gameWon)
         {
             game.gameWon = true;
-            SetTimedMessage("WINNER!", 100, 3.0f, YELLOW);
+            SetTimedMessage("WINNER", 3.0f, YELLOW);
             game.waitTimer = 3.5f;
         }
         if (game.gameWon && (game.waitTimer < EPSILON))
@@ -334,8 +341,8 @@ void UpdateGameFrame(void)
         if ((game.lives == 0) && !game.gameOver)
         {
             game.gameOver = true;
-            SetTimedMessage("GAME OVER!", 80, 2.0f, RED);
-            game.waitTimer = 3.0f;
+            SetTimedMessage("GAME OVER", 3.0f, RED);
+            game.waitTimer = 3.5f;
         }
         if (game.gameOver && (game.waitTimer < EPSILON))
         {
@@ -343,6 +350,7 @@ void UpdateGameFrame(void)
             game.score = 0;
             game.lives = 4;
             CreateNextLevel();
+            SetTimedMessage("GAME START", 3.0f, YELLOW);
         }
 
         // Update entities
@@ -800,6 +808,13 @@ void DrawGameFrame(void)
         GRID_WIDTH + GRID_UNIT, GRID_WIDTH + GRID_UNIT,
     };
     DrawRectangleLinesEx(innerBorder, GRID_UNIT/2, DARKGREEN);
+
+
+    if (ui.messageTimer > 0)
+    {
+        DrawRectangleV(ui.timedMessage.position, ui.timedMessage.measure, BLACK);
+        DrawUiText(game.font, ui.timedMessage);
+    }
 
     // Draw HUD
     // ----------------------------------------------------------------------------
