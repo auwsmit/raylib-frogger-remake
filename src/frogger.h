@@ -30,6 +30,7 @@ typedef enum {
     ENTITY_TYPE_TURTLE,
     ENTITY_TYPE_FLY,
     ENTITY_TYPE_LOG,
+    ENTITY_TYPE_CROC,
     ENTITY_TYPE_WALL,
     ENTITY_TYPE_WIN,
 } EntityType;
@@ -56,7 +57,8 @@ typedef struct {
     Rectangle grassPurple, grassGreen,
               log, turtle, turtleSink, car,
               frog, dead, dying, winFrog,
-              fly, life, level;
+              fly, life, level, score,
+              croc;
 } GameTextures;
 
 typedef struct {
@@ -76,6 +78,7 @@ typedef struct {
     float radius;
     float angle;
     float platformMove;
+    float scoreTimer;
     EntityType type;
     EntityFlags flags;
     bool isMoving;
@@ -83,6 +86,7 @@ typedef struct {
     bool isMoveBuffered;
     bool isOnPlatform;
     bool isDrowned;
+    bool isAnimated;
     bool isSinking;
     bool isDead;
     bool isWin;
@@ -163,11 +167,15 @@ void FreeGameState(void);
 // Update & Draw
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
 void UpdateFrog(void);
-void UpdateSinkingTurtle(Entity *turtle);
+void UpdateAnimationSinkingTurtle(Entity *e);
+void UpdateAnimationCroc(Entity *e);
 void UpdateHostile(Entity *hostile);
 void UpdatePlatform(Entity *platform);
 void UpdateWinZone(Entity *zone, int entityIndex);
 void MoveEntity(Entity *e);
+void DrawEntityWithWrap(Texture2D *atlas, Rectangle sprite, Rectangle rec, float angle, bool isWrapping);
+void DrawSegmentedEntity(Texture2D *atlas, Rectangle rec, float angle,
+                        bool isWrapping, int segments, Rectangle spriteOffsets[]);
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
 void DrawGrass(Rectangle grassRec);
 
@@ -177,3 +185,4 @@ void KillFrog(void);
 void RespawnFrog(void);
 
 #endif // FROGGER_GAME_HEADER_GUARD
+

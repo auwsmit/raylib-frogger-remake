@@ -55,6 +55,8 @@ void InitGameState(void)
     game.textures.log         = (Rectangle){ s*6,    s*8,    s,   s      };
     game.textures.life        = (Rectangle){ s*3,    s,      s/2, s/2    };
     game.textures.level       = (Rectangle){ s*3.5f, s,      s/2, s/2    };
+    game.textures.score       = (Rectangle){ s,      s*6,    s,   s      };
+    game.textures.croc        = (Rectangle){ 0,      s*7,    s,   s      };
 
     game.font = LoadFont("assets/fonts/PressStart2P.ttf");
 
@@ -86,19 +88,18 @@ void InitGameState(void)
     SetTimedMessage("GAME START", 3.0f, YELLOW);
 
     // Frog
-    Entity frog = {
-        .sprite = game.textures.frog,
-        .textureOffset = SPRITE_SIZE*2,
-        .type = ENTITY_TYPE_FROG,
-        .speed = BASE_SPEED*4.0f,
-        .radius = GRID_UNIT*0.4f,
-        .color = GREEN,
-        .animate.sprite = game.textures.dying,
-        .animate.frames = 3,
-        .animate.offset.x = s,
-        .animate.offset.y = s,
-        .animate.length = 0.3f
-    };
+    Entity frog = { 0 };
+    frog.sprite = game.textures.frog;
+    frog.textureOffset.x = SPRITE_SIZE*2;
+    frog.type = ENTITY_TYPE_FROG;
+    frog.speed = BASE_SPEED*4.0f;
+    frog.radius = GRID_UNIT*0.4f;
+    frog.color = GREEN;
+    frog.animate.sprite = game.textures.dying;
+    frog.animate.frames = 3;
+    frog.animate.offset.x = s;
+    frog.animate.offset.y = s;
+    frog.animate.length = 0.3f;
     Vector2 frogSpawnPos = GetGridPosition(8, 14);
     frog.position = frogSpawnPos;
     frog.position.x += GRID_UNIT/2;
@@ -154,19 +155,20 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
     float entityWidth = GRID_UNIT;
     bool isLeftWall = false;
     bool isExtending = false;
+    char lastLetter = '\0';
 
     for (char *c = pattern; *c != '\0'; c++)
     {
         if (*c == '.') currentPos.x += GRID_UNIT/2;
         if (*c == '_') currentPos.x += GRID_UNIT;
 
-        if (*c == '_' || *c == '.') isExtending = false;
+        // extend length for entities wider than 1 tile
+        if (*c != lastLetter) isExtending = false;
         if (isExtending)
         {
             arrlast(game.entities).rec.width += entityWidth;
             currentPos.x += entityWidth;
         }
-
         if (*c == '_' || *c == '.' || isExtending)
             continue;
 
@@ -202,6 +204,21 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
             e.flags = ENTITY_FLAG_MOVE | ENTITY_FLAG_PLATFORM;
         }
 
+        if (type == ENTITY_TYPE_CROC)
+        {
+            e.sprite = game.textures.croc;
+            e.flags = ENTITY_FLAG_MOVE | ENTITY_FLAG_PLATFORM;
+            if (*c == 'X')
+            {
+                e.sprite.x += s*2;
+                e.animate.sprite = e.sprite;
+                e.animate.offset.x = s; // croc mouth closed
+                e.animate.frames = 1;
+                e.animate.length = 1;
+                e.isAnimated = true;
+            }
+        }
+
         if (type == ENTITY_TYPE_CAR)
         {
             e.sprite = game.textures.car;
@@ -231,12 +248,8 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
             game.winCount++;
         }
 
-        if (type == ENTITY_TYPE_FLY)
-        {
-            e.sprite = game.textures.fly;
-        }
-
         arrpush(game.entities, e);
+        lastLetter = *c;
     }
 }
 
@@ -259,7 +272,9 @@ void CreateNextLevel(void)
     CreateRow(ENTITY_TYPE_FLY,    spawnRow,   "._O__O__O__O__O_.",  0);
 
     // River (logs, turtles, etc)
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", speed*0.8f);
+    // CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", speed*0.8f); // level 1
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "______.OOOO_.OOOO", speed*0.8f); // TEMP until level 2 layout
+    CreateRow(ENTITY_TYPE_CROC,     spawnRow, "__OOX_._____.____", speed*0.8f); // TEMP ^
     CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -speed);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  speed*2);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f);
@@ -364,7 +379,8 @@ void UpdateGameFrame(void)
             if (e->flags & ENTITY_FLAG_KILL)     UpdateHostile(e);
             if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
             if (e->flags & ENTITY_FLAG_MOVE)     MoveEntity(e);
-            if (e->isSinking)                    UpdateSinkingTurtle(e);
+            if (e->isSinking)                    UpdateAnimationSinkingTurtle(e);
+            if (e->isAnimated)                   UpdateAnimationCroc(e);
         }
 
         // Update flies
@@ -564,25 +580,45 @@ void UpdateFrog(void)
     else game.frog->textureOffset.x = SPRITE_SIZE*2;
 }
 
-void UpdateSinkingTurtle(Entity *turtle)
+void UpdateAnimationSinkingTurtle(Entity *e)
 {
-    if (turtle->animate.timer < EPSILON)
+    if (e->animate.timer < EPSILON)
     {
-        turtle->animate.frame += turtle->animate.frameIterate;
-        turtle->animate.timer = turtle->animate.length;
-        if (turtle->animate.frame >= 2)
-            turtle->animate.timer /= turtle->animate.frame;
+        e->animate.frame += e->animate.frameIterate;
+        e->animate.timer = e->animate.length;
+        if (e->animate.frame >= 2)
+            e->animate.timer /= e->animate.frame;
 
-        if (turtle->animate.frame == turtle->animate.frames)
-            turtle->animate.frameIterate = -1;
-        else if (turtle->animate.frame == 0)
-            turtle->animate.frameIterate = 1;
+        if (e->animate.frame == e->animate.frames)
+            e->animate.frameIterate = -1;
+        else if (e->animate.frame == 0)
+            e->animate.frameIterate = 1;
 
     }
     else
-        turtle->animate.timer -= game.frameTime;
+        e->animate.timer -= game.frameTime;
 
-    turtle->textureOffset.x = (float)((turtle->animate.frame - 1)*turtle->animate.offset.x);
+    e->textureOffset.x = (float)((e->animate.frame - 1)*e->animate.offset.x);
+}
+
+void UpdateAnimationCroc(Entity *e)
+{
+    if (e->animate.timer < EPSILON)
+    {
+        if (e->animate.frame == e->animate.frames)
+            e->animate.frame = 0;
+        else
+            e->animate.frame++;
+        e->animate.timer = e->animate.length;
+    }
+    else
+        e->animate.timer -= game.frameTime;
+
+    e->textureOffset.x = (float)(e->animate.frame*e->animate.offset.x);
+    if (e->animate.frame)
+        e->flags &= ~ENTITY_FLAG_KILL; // mouth closed
+    else
+        e->flags |= ENTITY_FLAG_KILL; // mouth open
 }
 
 void UpdateHostile(Entity *hostile)
@@ -611,7 +647,7 @@ void UpdatePlatform(Entity *platform)
         (colliding |= CheckCollisionPointRec(game.frog->position, platform->rec)))
     {
         game.frog->isOnPlatform = true;
-        if (platform->isSinking && platform->animate.frame == 3)
+        if (platform->animate.frame == 3)
             game.frog->isOnPlatform = false; // for sinking turtles
     }
 
@@ -627,12 +663,18 @@ void UpdateWinZone(Entity *zone, int entityIndex)
     {
         game.score += 50; // win score
         if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == entityIndex))
+        {
             game.score += 200; // fly score
+            zone->scoreTimer = 3.0f;
+        }
         zone->isWin = true;
         zone->flags |= ENTITY_FLAG_KILL;
         game.winCount--;
         RespawnFrog();
     }
+
+    if (zone->scoreTimer > EPSILON)
+        zone->scoreTimer -= game.frameTime;
 
     if (game.gameWon)
     {
@@ -663,6 +705,35 @@ void MoveEntity(Entity *e)
     e->rec.x += e->speed*game.frameTime;
 }
 
+void DrawEntityWithWrap(Texture2D *atlas, Rectangle sprite, Rectangle rec, float angle, bool isWrapping)
+{
+    DrawSpriteOnRectangle(atlas, sprite, rec, angle);
+
+    if (isWrapping)
+    {
+        Rectangle wrapLeft = rec;
+        wrapLeft.x += GRID_WIDTH;
+        Rectangle wrapRight = rec;
+        wrapRight.x -= GRID_WIDTH;
+
+        DrawSpriteOnRectangle(atlas, sprite, wrapLeft, angle);
+        DrawSpriteOnRectangle(atlas, sprite, wrapRight, angle);
+    }
+}
+
+void DrawSegmentedEntity(Texture2D *atlas, Rectangle rec, float angle,
+                        bool isWrapping, int segments, Rectangle spriteOffsets[])
+{
+    rec.width = GRID_UNIT;
+
+    for (int i = 0; i < segments; i++)
+    {
+        Rectangle currentSprite = spriteOffsets[i];
+        DrawEntityWithWrap(atlas, currentSprite, rec, angle, isWrapping);
+        rec.x += GRID_UNIT;
+    }
+}
+
 void DrawGameFrame(void)
 {
     ClearBackground(BLACK);
@@ -672,21 +743,26 @@ void DrawGameFrame(void)
     DrawGrass(game.background.grassMiddle);
     DrawGrass(game.background.grassBottom);
 
-
-    // Draw entities
-    // ----------------------------------------------------------------------------
     const float s = SPRITE_SIZE;
 
+    // Draw entities
     for (int i = 0; i < arrlen(game.entities); i++)
     {
         Entity *e = &game.entities[i];
-        Rectangle sprite = e->sprite;
+        Rectangle sprite;
+
+        if (e->isAnimated)
+            sprite = e->animate.sprite;
+        else
+            sprite = e->sprite;
         sprite.x += e->textureOffset.x;
         sprite.y += e->textureOffset.y;
 
         // Draw grass on top of screen
         if (e->type == ENTITY_TYPE_WALL)
+        {
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
+        }
 
         // Win zones
         if (e->type == ENTITY_TYPE_WIN)
@@ -696,65 +772,71 @@ void DrawGameFrame(void)
             topGrass.height -= s/2;
             Rectangle grassRec = e->rec;
             grassRec.y -= GRID_UNIT/2;
-            DrawSpriteOnRectangle(&game.textures.atlas, topGrass, grassRec, e->angle);
+            DrawSpriteOnRectangle(&game.textures.atlas, topGrass, grassRec, 0);
+
             if (e->isWin)
-                DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
+                DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, 0);
             else if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == i))
-                DrawSpriteOnRectangle(&game.textures.atlas, game.textures.fly, e->rec, e->angle);
+                DrawSpriteOnRectangle(&game.textures.atlas, game.textures.fly, e->rec, 0);
+
+            if (e->scoreTimer > EPSILON)
+                DrawSpriteOnRectangle(&game.textures.atlas, game.textures.score, e->rec, 0);
+        }
+
+        if (e->type == ENTITY_TYPE_TURTLE)
+        {
+            if (e->animate.frame > 0)
+            {
+                sprite = e->animate.sprite;
+                sprite.x += e->textureOffset.x;
+            }
+            else
+            {
+                sprite.x = e->sprite.x + game.animateTextureOffset;
+            }
         }
 
         if (e->type == ENTITY_TYPE_CAR || e->type == ENTITY_TYPE_TURTLE)
         {
-            if (e->type == ENTITY_TYPE_TURTLE)
-            {
-                if (e->animate.frame > 0)
-                {
-                    sprite = e->animate.sprite;
-                    sprite.x += e->textureOffset.x;
-                }
-                else sprite.x = e->sprite.x + game.animateTextureOffset;
-            }
-            DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
-            if (e->isWrapping)
-            {
-                Rectangle wrapLeftRec = e->rec;
-                wrapLeftRec.x += GRID_WIDTH;
-                Rectangle wrapRightRec = e->rec;
-                wrapRightRec.x -= GRID_WIDTH;
-                DrawSpriteOnRectangle(&game.textures.atlas, sprite, wrapLeftRec, e->angle);
-                DrawSpriteOnRectangle(&game.textures.atlas, sprite, wrapRightRec, e->angle);
-            }
+            DrawEntityWithWrap(&game.textures.atlas, sprite, e->rec, e->angle, e->isWrapping);
         }
 
         if (e->type == ENTITY_TYPE_LOG)
         {
-            Rectangle wrapLeftRec = e->rec;
-            wrapLeftRec.width = GRID_UNIT;
-            wrapLeftRec.x += GRID_WIDTH;
-            Rectangle wrapRightRec = e->rec;
-            wrapRightRec.width = GRID_UNIT;
-            wrapRightRec.x -= GRID_WIDTH;
+            int logWidth = (int)(e->rec.width / GRID_UNIT);
+            Rectangle spriteOffsets[logWidth];
 
-            Rectangle rec = e->rec;
-            rec.width = GRID_UNIT;
-            float logWidth = e->rec.width/GRID_UNIT;
-            for (int i = 1; i <= logWidth; i++)
+            for (int j = 0; j < logWidth; j++)
             {
-                if (i > 1)
-                    sprite.x = e->sprite.x + s; // log middle
-                if (i == logWidth)
-                    sprite.x = e->sprite.x + s*2; // log end
-                DrawSpriteOnRectangle(&game.textures.atlas, sprite, rec, e->angle);
-
-                if (e->isWrapping)
-                {
-                    DrawSpriteOnRectangle(&game.textures.atlas, sprite, wrapLeftRec, e->angle);
-                    DrawSpriteOnRectangle(&game.textures.atlas, sprite, wrapRightRec, e->angle);
-                    wrapLeftRec.x += GRID_UNIT;
-                    wrapRightRec.x += GRID_UNIT;
-                }
-                rec.x += GRID_UNIT;
+                spriteOffsets[j] = sprite;
+                if (j > 0)
+                    spriteOffsets[j].x = e->sprite.x + s; // log middle
+                if (j == logWidth - 1)
+                    spriteOffsets[j].x = e->sprite.x + s*2; // log end
             }
+
+            DrawSegmentedEntity(&game.textures.atlas, e->rec, e->angle,
+                              e->isWrapping, logWidth, spriteOffsets);
+        }
+
+        if (e->type == ENTITY_TYPE_CROC)
+        {
+            int segments = e->isAnimated ? 1 : 2;
+            Rectangle spriteOffsets[2];
+
+            if (e->isAnimated)
+                spriteOffsets[0] = sprite;
+            else
+            {
+                for (int j = 0; j < segments; j++)
+                {
+                    spriteOffsets[j] = sprite;
+                    spriteOffsets[j].x = e->sprite.x + s*j;
+                }
+            }
+
+            DrawSegmentedEntity(&game.textures.atlas, e->rec, e->angle,
+                              e->isWrapping, segments, spriteOffsets);
         }
 
         // Frog
@@ -776,8 +858,8 @@ void DrawGameFrame(void)
             else angle = e->angle;
 
             Vector2 frogPos = e->position;
-
             DrawSpriteOnCircle(&game.textures.atlas, sprite, frogPos, GRID_UNIT/2, angle);
+
             if (e->isWrapping)
             {
                 Vector2 wrapLeftPos = { frogPos.x + GRID_WIDTH, frogPos.y };
@@ -789,8 +871,6 @@ void DrawGameFrame(void)
     }
 
     // Draw game border (outside of grid)
-    // ----------------------------------------------------------------------------
-    // left, right, top, bottom
     DrawRectangleV((Vector2){ 0, 0 },
                    (Vector2){ VIRTUAL_WIDTH - GRID_WIDTH + GRID_UNIT/2, VIRTUAL_HEIGHT },
                    BG_COLOR);
@@ -809,7 +889,6 @@ void DrawGameFrame(void)
     };
     DrawRectangleLinesEx(innerBorder, GRID_UNIT/2, DARKGREEN);
 
-
     if (ui.messageTimer > 0)
     {
         DrawRectangleV(ui.timedMessage.position, ui.timedMessage.measure, BLACK);
@@ -817,7 +896,6 @@ void DrawGameFrame(void)
     }
 
     // Draw HUD
-    // ----------------------------------------------------------------------------
     DrawUiText(game.font, ui.score);
     DrawUiText(game.font, ui.scoreNum);
     DrawUiText(game.font, ui.hiScore);
@@ -885,3 +963,4 @@ void RespawnFrog(void)
     game.prevFrogYPos = game.spawnPos.y;
     game.rowsTravelled = 0;
 }
+
