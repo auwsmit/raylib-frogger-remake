@@ -190,6 +190,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
             if (*c == 'F' || *c == 'S')
             {
                 e.isSinking = true;
+                e.isAnimated = true;
                 e.animate.sprite = game.textures.turtleSink;
                 e.animate.frames = 3;
                 e.animate.offset.x = SPRITE_SIZE;
@@ -207,10 +208,12 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         if (type == ENTITY_TYPE_CROC)
         {
             e.sprite = game.textures.croc;
+            e.sprite.width = s*2; // tail and body
             e.flags = ENTITY_FLAG_MOVE | ENTITY_FLAG_PLATFORM;
             if (*c == 'X')
             {
-                e.sprite.x += s*2;
+                e.sprite.x += s*2; // croc mouth open
+                e.sprite.width = s;
                 e.animate.sprite = e.sprite;
                 e.animate.offset.x = s; // croc mouth closed
                 e.animate.frames = 1;
@@ -299,7 +302,7 @@ void FreeGameState(void)
     arrfree(game.entities);
 }
 
-// Update & Draw
+// Update
 // ----------------------------------------------------------------------------
 
 void UpdateGameFrame(void)
@@ -379,8 +382,12 @@ void UpdateGameFrame(void)
             if (e->flags & ENTITY_FLAG_KILL)     UpdateHostile(e);
             if (e->flags & ENTITY_FLAG_PLATFORM) UpdatePlatform(e);
             if (e->flags & ENTITY_FLAG_MOVE)     MoveEntity(e);
-            if (e->isSinking)                    UpdateAnimationSinkingTurtle(e);
-            if (e->isAnimated)                   UpdateAnimationCroc(e);
+
+            if (e->isAnimated)
+            {
+                if (e->type == ENTITY_TYPE_CROC) UpdateAnimationCroc(e);
+                if (e->isSinking)                UpdateAnimationSinkingTurtle(e);
+            }
         }
 
         // Update flies
@@ -705,34 +712,8 @@ void MoveEntity(Entity *e)
     e->rec.x += e->speed*game.frameTime;
 }
 
-void DrawEntityWithWrap(Texture2D *atlas, Rectangle sprite, Rectangle rec, float angle, bool isWrapping)
-{
-    DrawSpriteOnRectangle(atlas, sprite, rec, angle);
-
-    if (isWrapping)
-    {
-        Rectangle wrapLeft = rec;
-        wrapLeft.x += GRID_WIDTH;
-        Rectangle wrapRight = rec;
-        wrapRight.x -= GRID_WIDTH;
-
-        DrawSpriteOnRectangle(atlas, sprite, wrapLeft, angle);
-        DrawSpriteOnRectangle(atlas, sprite, wrapRight, angle);
-    }
-}
-
-void DrawSegmentedEntity(Texture2D *atlas, Rectangle rec, float angle,
-                        bool isWrapping, int segments, Rectangle spriteOffsets[])
-{
-    rec.width = GRID_UNIT;
-
-    for (int i = 0; i < segments; i++)
-    {
-        Rectangle currentSprite = spriteOffsets[i];
-        DrawEntityWithWrap(atlas, currentSprite, rec, angle, isWrapping);
-        rec.x += GRID_UNIT;
-    }
-}
+// Draw
+// ----------------------------------------------------------------------------
 
 void DrawGameFrame(void)
 {
@@ -751,20 +732,29 @@ void DrawGameFrame(void)
         Entity *e = &game.entities[i];
         Rectangle sprite;
 
-        if (e->isAnimated)
+        if (e->isAnimated && e->animate.frame > 0)
             sprite = e->animate.sprite;
         else
             sprite = e->sprite;
         sprite.x += e->textureOffset.x;
         sprite.y += e->textureOffset.y;
 
-        // Draw grass on top of screen
+        // Global turtle animation
+        if (e->type == ENTITY_TYPE_TURTLE)
+        {
+            if (e->animate.frame == 0)
+            {
+                sprite.x = e->sprite.x + game.animateTextureOffset;
+            }
+        }
+
+        // Grass on top of screen
         if (e->type == ENTITY_TYPE_WALL)
         {
             DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, e->angle);
         }
 
-        // Win zones
+        // Win zones (and grass above win zone)
         if (e->type == ENTITY_TYPE_WIN)
         {
             Rectangle topGrass = game.textures.grassGreen;
@@ -776,67 +766,37 @@ void DrawGameFrame(void)
 
             if (e->isWin)
                 DrawSpriteOnRectangle(&game.textures.atlas, sprite, e->rec, 0);
-            else if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == i))
+            else if ((game.fly.idx > 0) && (game.fly.entityIdx[game.fly.idx - 1] == i)) // is active fly tile
                 DrawSpriteOnRectangle(&game.textures.atlas, game.textures.fly, e->rec, 0);
 
             if (e->scoreTimer > EPSILON)
                 DrawSpriteOnRectangle(&game.textures.atlas, game.textures.score, e->rec, 0);
         }
 
-        if (e->type == ENTITY_TYPE_TURTLE)
+        // Wrapping entities
+        if (e->type == ENTITY_TYPE_CAR ||
+            e->type == ENTITY_TYPE_TURTLE ||
+            e->type == ENTITY_TYPE_CROC)
         {
-            if (e->animate.frame > 0)
-            {
-                sprite = e->animate.sprite;
-                sprite.x += e->textureOffset.x;
-            }
-            else
-            {
-                sprite.x = e->sprite.x + game.animateTextureOffset;
-            }
+            DrawWrappingEntity(&game.textures.atlas, sprite, e->rec, e->angle, e->isWrapping);
         }
 
-        if (e->type == ENTITY_TYPE_CAR || e->type == ENTITY_TYPE_TURTLE)
-        {
-            DrawEntityWithWrap(&game.textures.atlas, sprite, e->rec, e->angle, e->isWrapping);
-        }
-
+        // Logs
         if (e->type == ENTITY_TYPE_LOG)
         {
-            int logWidth = (int)(e->rec.width / GRID_UNIT);
-            Rectangle spriteOffsets[logWidth];
+            int logWidth = (int)(e->rec.width/GRID_UNIT);
+            Rectangle logRec = e->rec;
+            logRec.width = GRID_UNIT;
 
             for (int j = 0; j < logWidth; j++)
             {
-                spriteOffsets[j] = sprite;
                 if (j > 0)
-                    spriteOffsets[j].x = e->sprite.x + s; // log middle
+                    sprite.x = e->sprite.x + s; // log middle
                 if (j == logWidth - 1)
-                    spriteOffsets[j].x = e->sprite.x + s*2; // log end
+                    sprite.x = e->sprite.x + s*2; // log end
+                DrawWrappingEntity(&game.textures.atlas, sprite, logRec, e->angle, e->isWrapping);
+                logRec.x += GRID_UNIT;
             }
-
-            DrawSegmentedEntity(&game.textures.atlas, e->rec, e->angle,
-                              e->isWrapping, logWidth, spriteOffsets);
-        }
-
-        if (e->type == ENTITY_TYPE_CROC)
-        {
-            int segments = e->isAnimated ? 1 : 2;
-            Rectangle spriteOffsets[2];
-
-            if (e->isAnimated)
-                spriteOffsets[0] = sprite;
-            else
-            {
-                for (int j = 0; j < segments; j++)
-                {
-                    spriteOffsets[j] = sprite;
-                    spriteOffsets[j].x = e->sprite.x + s*j;
-                }
-            }
-
-            DrawSegmentedEntity(&game.textures.atlas, e->rec, e->angle,
-                              e->isWrapping, segments, spriteOffsets);
         }
 
         // Frog
@@ -919,6 +879,22 @@ void DrawGameFrame(void)
     {
         DrawSpriteOnRectangle(&game.textures.atlas, game.textures.level, levelRec, 0);
         levelRec.x -= GRID_UNIT/2;
+    }
+}
+
+void DrawWrappingEntity(Texture2D *atlas, Rectangle sprite, Rectangle rec, float angle, bool isWrapping)
+{
+    DrawSpriteOnRectangle(atlas, sprite, rec, angle);
+
+    if (isWrapping)
+    {
+        Rectangle wrapLeft = rec;
+        wrapLeft.x += GRID_WIDTH;
+        Rectangle wrapRight = rec;
+        wrapRight.x -= GRID_WIDTH;
+
+        DrawSpriteOnRectangle(atlas, sprite, wrapLeft, angle);
+        DrawSpriteOnRectangle(atlas, sprite, wrapRight, angle);
     }
 }
 

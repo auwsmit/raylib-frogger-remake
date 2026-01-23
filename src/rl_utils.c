@@ -3,6 +3,7 @@
 // See header for more documentation/descriptions
 
 // Asset manager
+// - track assets in a list, and then free all assets in that list
 // ----------------------------------------------------------------------------
 Texture LoadTextureAsset(RaylibAssets *pool, char* fileName)
 {
@@ -35,6 +36,7 @@ void FreeRaylibAssets(RaylibAssets *pool)
 // ----------------------------------------------------------------------------
 void DrawSpriteOnRectangle(Texture *sprite, Rectangle src, Rectangle rect, float angle)
 {
+    // prevent bordering sprites in the atlas from bleeding over
     src.x += 0.05f;
     src.y += 0.05f;
     src.width -= 0.1f;
@@ -50,6 +52,8 @@ void DrawSpriteOnCircle(Texture *sprite, Rectangle src,
         radius*2, radius*2
     };
     Vector2 spriteOrigin = { radius, radius };
+
+    // prevent bordering sprites in the atlas from bleeding over
     src.x += 0.05f;
     src.y += 0.05f;
     src.width -= 0.1f;

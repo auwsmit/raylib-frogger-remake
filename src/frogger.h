@@ -164,7 +164,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed); // create 
 void CreateNextLevel(void);
 void FreeGameState(void);
 
-// Update & Draw
+// Update
 void UpdateGameFrame(void); // Updates all the game's data and objects for the current frame
 void UpdateFrog(void);
 void UpdateAnimationSinkingTurtle(Entity *e);
@@ -173,10 +173,10 @@ void UpdateHostile(Entity *hostile);
 void UpdatePlatform(Entity *platform);
 void UpdateWinZone(Entity *zone, int entityIndex);
 void MoveEntity(Entity *e);
-void DrawEntityWithWrap(Texture2D *atlas, Rectangle sprite, Rectangle rec, float angle, bool isWrapping);
-void DrawSegmentedEntity(Texture2D *atlas, Rectangle rec, float angle,
-                        bool isWrapping, int segments, Rectangle spriteOffsets[]);
+
+// Draw
 void DrawGameFrame(void); // Draws all the game's objects for the current frame
+void DrawWrappingEntity(Texture2D *atlas, Rectangle sprite, Rectangle rec, float angle, bool isWrapping);
 void DrawGrass(Rectangle grassRec);
 
 // Misc

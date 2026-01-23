@@ -8,9 +8,9 @@
 
 uint PlatformWindowFlags(void)
 {
-    uint windowFlags = FLAG_WINDOW_RESIZABLE;
-    if (VSYNC_ENABLED) windowFlags |= FLAG_VSYNC_HINT;
-    return windowFlags;
+    uint addedWindowFlags = FLAG_WINDOW_RESIZABLE;
+    if (VSYNC_ENABLED) addedWindowFlags |= FLAG_VSYNC_HINT;
+    return addedWindowFlags;
 }
 
 void PlatformRunGameLoop(void (*UpdateDrawFrame)(void))
