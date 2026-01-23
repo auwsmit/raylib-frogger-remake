@@ -24,17 +24,23 @@ void InitRenderTexture(void)
 void InitScreenShader(void)
 {
     // Init shader
-    // viewport.shader = LoadShader(0, TextFormat("assets/shaders/pixel%i.fs", GLSL_VERSION));
-    // viewport.shaderRenderWidthLoc = GetShaderLocation(viewport.shader, "renderWidth");
-    // viewport.shaderRenderHeightLoc = GetShaderLocation(viewport.shader, "renderHeight");
-    // viewport.shaderPixelWidthLoc = GetShaderLocation(viewport.shader, "pixelWidth");
-    // viewport.shaderPixelHeightLoc = GetShaderLocation(viewport.shader, "pixelHeight");
-    // viewport.pixelSize = SHADER_PIXEL_SIZE;
-    // SetShaderValue(viewport.shader, viewport.shaderRenderWidthLoc, &viewport.renderTexWidth, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(viewport.shader, viewport.shaderRenderHeightLoc, &viewport.renderTexHeight, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(viewport.shader, viewport.shaderPixelWidthLoc, &viewport.pixelSize, SHADER_UNIFORM_FLOAT);
-    // SetShaderValue(viewport.shader, viewport.shaderPixelHeightLoc, &viewport.pixelSize, SHADER_UNIFORM_FLOAT);
-    viewport.shaderEnabled = false;
+    viewport.shader = LoadShader(0, TextFormat("assets/shaders/crt_newpixie%i.fs", GLSL_VERSION));
+    viewport.textureLoc      = GetShaderLocation(viewport.shader, "texture0");
+    viewport.resolutionLoc   = GetShaderLocation(viewport.shader, "resolution");
+    viewport.timeLoc         = GetShaderLocation(viewport.shader, "time");
+    viewport.curveLoc        = GetShaderLocation(viewport.shader, "curvature");
+    viewport.wiggleToggleLoc = GetShaderLocation(viewport.shader, "wiggleToggle");
+    viewport.scanrollLoc     = GetShaderLocation(viewport.shader, "scanroll");
+    viewport.vignetteLoc     = GetShaderLocation(viewport.shader, "vignette");
+    viewport.ghostingLoc     = GetShaderLocation(viewport.shader, "ghosting");
+    viewport.useFrameLoc     = GetShaderLocation(viewport.shader, "useFrame");
+    SetShaderValue(viewport.shader, viewport.curveLoc, (float[]){2.0f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.wiggleToggleLoc, (float[]){0}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.scanrollLoc, (float[]){1.5f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.vignetteLoc, (float[]){1.01f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.ghostingLoc, (float[]){0.2f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.useFrameLoc, (float[]){0}, SHADER_UNIFORM_FLOAT);
+    viewport.shaderEnabled = true;
 }
 
 // Updates window render info for each frame
@@ -71,4 +77,12 @@ void UpdateWindowRenderFrame(void)
         viewport.x + viewport.width/2.0f, viewport.y + viewport.height/2.0f
     };
     ui.camera.zoom = viewport.width/VIRTUAL_WIDTH;
+}
+
+void UpdateWindowShader(void)
+{
+    float res[2] = { GetRenderWidth(), GetRenderHeight() };
+    SetShaderValueTexture(viewport.shader, viewport.textureLoc, viewport.renderTarget.texture);
+    SetShaderValue(viewport.shader, viewport.resolutionLoc, &res, SHADER_UNIFORM_VEC2);
+    SetShaderValue(viewport.shader, viewport.timeLoc, &game.frameTime, SHADER_UNIFORM_FLOAT);
 }

@@ -12,9 +12,8 @@ typedef struct {
           renderTexWidth, renderTexHeight, resScale;
 
     Shader shader;
-    // int shaderRenderWidthLoc,  shaderRenderHeightLoc,
-    //     shaderPixelWidthLoc, shaderPixelHeightLoc;
-    // float pixelSize;
+    int textureLoc, resolutionLoc, timeLoc, curveLoc, wiggleToggleLoc,
+        scanrollLoc, vignetteLoc, ghostingLoc, useFrameLoc;
     bool shaderEnabled;
 } RenderData;
 

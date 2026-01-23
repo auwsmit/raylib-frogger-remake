@@ -105,6 +105,7 @@ void UpdateDrawFrame(void)
 
     // Update window data for proper aspect ratio, cameras, and shaders
     UpdateWindowRenderFrame();
+    UpdateWindowShader();
 
     // Update for current screen
     switch(game.currentScreen)
@@ -130,8 +131,10 @@ void UpdateDrawFrame(void)
                 case SCREEN_LOGO:     DrawRaylibLogo();
                                       break;
                 case SCREEN_TITLE:    ClearBackground(BG_COLOR);
+                                      DrawUiFrame();
                                       break;
                 case SCREEN_GAMEPLAY: DrawGameFrame();
+                                      DrawUiFrame();
                                       break;
                 default: break;
             }
@@ -154,21 +157,6 @@ void UpdateDrawFrame(void)
                            Vector2Zero(), 0, WHITE);
 
         if (viewport.shaderEnabled) EndShaderMode();
-
-        // Draw UI above render texture
-        BeginScissorMode((int)viewport.x, // draw within aspect ratio
-                         (int)viewport.y, (int)viewport.width, (int)viewport.height);
-        BeginMode2D(ui.camera);
-
-            switch(game.currentScreen)
-            {
-                case SCREEN_TITLE:
-                case SCREEN_GAMEPLAY: DrawUiFrame();
-                                      break;
-                default: break;
-            }
-        EndMode2D();
-        EndScissorMode();
 
         // Draw touch screen gamepad on screen edges
         DrawUiGamepad();
