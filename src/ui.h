@@ -84,7 +84,7 @@ typedef struct {
     Vector2 position;
     Vector2 measure;
     float fontSize;
-    const char *text;
+    char text[64];
 } UiText;
 
 typedef struct {
@@ -250,6 +250,6 @@ void DrawUiAnalogStick(UiAnalogStick *stick); // Draw touch analog stick
 void DrawDebugInfo(void);
 
 // Other
-void SetTimedMessage(char *message, float time, Color color);
+void SetTimedMessage(const char *message, float time, Color color);
 
 #endif // FROGGER_UI_HEADER_GUARD

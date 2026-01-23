@@ -9,6 +9,7 @@
 typedef struct { // keep track of raylib resources to free together
     Texture *textures;
     Sound *sounds;
+    Music *music;
 } RaylibAssets;
 
 // Prototypes
@@ -17,6 +18,7 @@ typedef struct { // keep track of raylib resources to free together
 // Asset manager
 Texture LoadTextureAsset(RaylibAssets *pool, char* fileName);
 Sound LoadSoundAsset(RaylibAssets *pool, const char *fileName);
+Music LoadMusicAsset(RaylibAssets *pool, const char *fileName);
 void FreeRaylibAssets(RaylibAssets *pool);
 
 // Draw sprites

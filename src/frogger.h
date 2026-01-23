@@ -49,7 +49,8 @@ typedef enum {
 } EntityMoveDirection;
 
 typedef struct {
-    Sound menu;
+    Sound hop, sunk, hit, win, blink, musicIntro;
+    Music musicLoop;
 } GameSounds;
 
 typedef struct {
@@ -120,7 +121,7 @@ typedef struct {
     } fly;
 
     RaylibAssets assets;
-    // GameSounds sounds;
+    GameSounds sounds;
     GameTextures textures;
     Font font;
 
@@ -134,7 +135,7 @@ typedef struct {
     int score;
     int hiScore;
     int rowsTravelled;
-    bool gameOver, gameWon;
+    bool isFirstFrame, isGameOver, isGameWon;
     float prevFrogYPos;
     float waitTimer;
     float freezeTimer;
@@ -183,6 +184,7 @@ void DrawGrass(Rectangle grassRec);
 Vector2 GetGridPosition(int row, int col);
 void KillFrog(void);
 void RespawnFrog(void);
+void StopGameSounds(void);
 
 #endif // FROGGER_GAME_HEADER_GUARD
 

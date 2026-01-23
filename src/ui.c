@@ -176,11 +176,11 @@ void CreateUiTextEx(Font font, char *text, float x, float y, float fontSize)
         y += Lerp(0.0f, (float)VIRTUAL_HEIGHT - measure.y, ((float)ui.vAlign)*0.5f);
 
     UiText textElement = {
-        .text = text,
         .position = { x, y },
         .fontSize = fontSize,
         .color = RAYWHITE
     };
+    strcpy(textElement.text, text);
 
     arrput(ui.menus[ui.initMenu].text, textElement);
 }
@@ -839,12 +839,12 @@ void DrawDebugInfo(void)
 
 // Frogger
 // ----------------------------------------------------------------------------
-void SetTimedMessage(char *message, float time, Color color)
+void SetTimedMessage(const char *message, float time, Color color)
 {
     ui.messageTimer = time;
     Vector2 measure = MeasureTextEx(game.font, message, ui.timedMessage.fontSize, 0);
     ui.timedMessage.measure = measure;
-    ui.timedMessage.text = message;
+    strcpy(ui.timedMessage.text, message);
     ui.timedMessage.position = (Vector2){ (float)(VIRTUAL_WIDTH - measure.x)/2, (float)(VIRTUAL_HEIGHT - measure.y)/2 };
     ui.timedMessage.color = color;
 }

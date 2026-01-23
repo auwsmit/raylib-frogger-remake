@@ -9,12 +9,12 @@ uniform sampler2D frameTex;   // optional bezel/frame overlay
 
 uniform vec2  resolution;     // target size (pixels)
 uniform float time;           // seconds
-uniform float curvature = 2.0;      // ~2.0
-uniform float wiggleToggle = 0;   // 0/1
-uniform float scanroll = 1.5;       // 0..1
-uniform float vignette = 1.01;       // 0..1
-uniform float ghosting = 0.2;       // 0..2
-uniform float useFrame = 0;       // 0/1
+uniform float curvature;      // ~2.0
+uniform float wiggleToggle;   // 0/1
+uniform float scanroll;       // 0..1
+uniform float vignette;       // 0..1
+uniform float ghosting;       // 0..2
+uniform float useFrame;       // 0/1
 
 vec3 tsample(sampler2D samp, vec2 tc) {
     tc = tc * vec2(1.025, 0.92) + vec2(-0.0125, 0.04);

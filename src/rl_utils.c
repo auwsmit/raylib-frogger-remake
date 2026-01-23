@@ -20,6 +20,13 @@ Sound LoadSoundAsset(RaylibAssets *pool, const char *fileName)
     return s;
 }
 
+Music LoadMusicAsset(RaylibAssets *pool, const char *fileName)
+{
+    Music m = LoadMusicStream(fileName);
+    arrput(pool->music, m);
+    return m;
+}
+
 void FreeRaylibAssets(RaylibAssets *pool)
 {
     for (int i = 0; i < arrlen(pool->textures); i++)
@@ -28,8 +35,12 @@ void FreeRaylibAssets(RaylibAssets *pool)
     for (int i = 0; i < arrlen(pool->sounds); i++)
         UnloadSound(pool->sounds[i]);
 
+    for (int i = 0; i < arrlen(pool->music); i++)
+        UnloadMusicStream(pool->music[i]);
+
     arrfree(pool->textures);
     arrfree(pool->sounds);
+    arrfree(pool->music);
 }
 
 // Draw sprites

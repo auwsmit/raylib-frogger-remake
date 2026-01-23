@@ -38,7 +38,7 @@ void InitGameState(void)
 
     game.gridStart = GetGridPosition(0, 0);
 
-    // Textures
+    // Load external assets
     game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
     SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
     const float s = SPRITE_SIZE;
@@ -58,6 +58,18 @@ void InitGameState(void)
     game.textures.score       = (Rectangle){ s,      s*6,    s,   s      };
     game.textures.croc        = (Rectangle){ 0,      s*7,    s,   s      };
 
+    game.sounds.hop = LoadSoundAsset(&game.assets, "assets/audio/frog_hop.wav");
+    game.sounds.hit = LoadSoundAsset(&game.assets, "assets/audio/frog_hit.wav");
+    game.sounds.sunk = LoadSoundAsset(&game.assets, "assets/audio/frog_sunk.wav");
+    game.sounds.win = LoadSoundAsset(&game.assets, "assets/audio/frog_win.wav");
+    game.sounds.blink = LoadSoundAsset(&game.assets, "assets/audio/frog_blink.wav");
+    game.sounds.musicIntro = LoadSoundAsset(&game.assets, "assets/audio/music_intro.wav");
+    game.sounds.musicLoop = LoadMusicAsset(&game.assets, "assets/audio/music_loop.wav");
+    SetSoundVolume(game.sounds.hop, 0.5f);
+    SetSoundVolume(game.sounds.hit, 0.5f);
+    SetSoundVolume(game.sounds.musicIntro, 0.75f);
+    SetMusicVolume(game.sounds.musicLoop, 0.75f);
+
     game.font = LoadFont("assets/fonts/PressStart2P.ttf");
 
     UiText defaultFont = {
@@ -65,7 +77,7 @@ void InitGameState(void)
         .color = WHITE,
     };
     UiText score = defaultFont;
-    score.text = "SCORE";
+    strcpy(score.text, "SCORE");
     score.measure = MeasureTextEx(game.font, score.text, score.fontSize, 0);
     score.position = (Vector2){ game.gridStart.x + GRID_UNIT*2.5f, game.gridStart.y };
     UiText scoreNum = score;
@@ -75,7 +87,7 @@ void InitGameState(void)
     ui.scoreNum = scoreNum;
 
     UiText hiScore = defaultFont;
-    hiScore.text = "HI-SCORE";
+    strcpy(hiScore.text, "HI-SCORE");
     hiScore.measure = MeasureTextEx(game.font, hiScore.text, hiScore.fontSize, 0);
     hiScore.position = (Vector2){ (VIRTUAL_WIDTH - hiScore.measure.x)/2, game.gridStart.y };
     UiText hiScoreNum = hiScore;
@@ -247,7 +259,7 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
         {
             e.sprite = game.textures.winFrog;
             e.animate.offset.x = s;
-            e.animate.timer = 0.5f*(game.winCount + 1);
+            e.animate.timer = 0.75f*(game.winCount + 1);
             game.winCount++;
         }
 
@@ -258,21 +270,27 @@ void CreateRow(EntityType type, int row, char *pattern, float speed)
 
 void CreateNextLevel(void)
 {
+    StopGameSounds();
+
     game.winCount = 0;
-    game.gameOver = false;
-    game.gameWon = false;
+    game.isGameOver = false;
+    game.isGameWon = false;
+    game.isFirstFrame = true;
 
     Entity frog = *game.frog;
     if (game.entities) arrfree(game.entities);
 
     float speed = BASE_SPEED;
-    if (game.level > 1) speed *= game.level*0.7f; // TEMP until more level layouts
+    if (game.level > 1)
+    {
+        speed *= game.level*0.7f; // TEMP until more level layouts
+        SetTimedMessage(TextFormat("LEVEL %i", game.level), 3.0f, YELLOW);
+    }
 
     // Win zones
     int spawnRow = 2;
     CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
     CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
-    CreateRow(ENTITY_TYPE_FLY,    spawnRow,   "._O__O__O__O__O_.",  0);
 
     // River (logs, turtles, etc)
     // CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", speed*0.8f); // level 1
@@ -280,7 +298,9 @@ void CreateNextLevel(void)
     CreateRow(ENTITY_TYPE_CROC,     spawnRow, "__OOX_._____.____", speed*0.8f); // TEMP ^
     CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -speed);
     CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  speed*2);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f);
+    // CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f); // level 1
+    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO_______OOO",  speed*0.5f);
+    CreateRow(ENTITY_TYPE_CROC,     spawnRow, "________OOX_____",  speed*0.5f);
     CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -speed);
 
     // Road, Cars
@@ -307,6 +327,19 @@ void FreeGameState(void)
 
 void UpdateGameFrame(void)
 {
+    if (game.isFirstFrame)
+    {
+        game.isFirstFrame = false;
+        PlaySound(game.sounds.musicIntro);
+    }
+    if (!game.isGameOver && !game.isGameWon &&
+        !IsSoundPlaying(game.sounds.musicIntro) &&
+        !IsMusicStreamPlaying(game.sounds.musicLoop))
+    {
+        PlayMusicStream(game.sounds.musicLoop);
+    }
+    UpdateMusicStream(game.sounds.musicLoop);
+
     // Debug:
     if (IsKeyPressed(KEY_K))
         KillFrog();
@@ -337,13 +370,15 @@ void UpdateGameFrame(void)
     if (!game.isPaused)
     {
         // Current level win condition
-        if ((game.winCount == 0) && !game.gameWon)
+        if ((game.winCount == 0) && !game.isGameWon)
         {
-            game.gameWon = true;
+            StopGameSounds();
+
+            game.isGameWon = true;
             SetTimedMessage("WINNER", 3.0f, YELLOW);
-            game.waitTimer = 3.5f;
+            game.waitTimer = 4.5f;
         }
-        if (game.gameWon && (game.waitTimer < EPSILON))
+        if (game.isGameWon && (game.waitTimer < EPSILON))
         {
             game.level++;
             CreateNextLevel();
@@ -352,23 +387,25 @@ void UpdateGameFrame(void)
         // Update score
         if (game.score > game.hiScore)
             game.hiScore = game.score;
-        ui.scoreNum.text = TextFormat("%i", game.score);
-        ui.hiScoreNum.text = TextFormat("%i", game.hiScore);
+        strcpy(ui.scoreNum.text, TextFormat("%i", game.score));
+        strcpy(ui.hiScoreNum.text, TextFormat("%i", game.hiScore));
 
         // Game over condition
-        if ((game.lives == 0) && !game.gameOver)
+        if ((game.lives == 0) && !game.isGameOver)
         {
-            game.gameOver = true;
+            StopGameSounds();
+
+            game.isGameOver = true;
             SetTimedMessage("GAME OVER", 3.0f, RED);
-            game.waitTimer = 3.5f;
+            game.waitTimer = 4.5f;
         }
-        if (game.gameOver && (game.waitTimer < EPSILON))
+        if (game.isGameOver && (game.waitTimer < EPSILON))
         {
             game.level = 1;
             game.score = 0;
             game.lives = 4;
             CreateNextLevel();
-            SetTimedMessage("GAME START", 3.0f, YELLOW);
+            // SetTimedMessage("GAME START", 3.0f, YELLOW);
         }
 
         // Update entities
@@ -465,7 +502,7 @@ void UpdateFrog(void)
     bool onRightEdge = (game.frog->position.x + game.frog->radius > game.gridStart.x + GRID_WIDTH);
     game.frog->isWrapping = onLeftEdge || onRightEdge;
 
-    // respawn game.frog
+    // respawn frog
     if (game.frog->isDead)
     {
         // update death animation
@@ -483,7 +520,7 @@ void UpdateFrog(void)
 
         game.deathTimer -= game.frameTime;
 
-        if ((game.deathTimer < 0) && !game.gameOver)
+        if ((game.deathTimer < 0) && !game.isGameOver)
             RespawnFrog();
 
         return; // no update
@@ -493,8 +530,8 @@ void UpdateFrog(void)
     if (!game.frog->isOnPlatform &&
         CheckCollisionPointRec(game.frog->position, game.background.water))
     {
-        KillFrog();
         game.frog->isDrowned = true;
+        KillFrog();
         game.frog->textureOffset.y = 0; // set to drown death animation
         return;
     }
@@ -516,6 +553,7 @@ void UpdateFrog(void)
         {
             game.frog->seekPos = game.frog->bufferPos;
             game.frog->isMoveBuffered = false;
+            PlaySound(game.sounds.hop);
         }
         else game.frog->isMoving = false;
     }
@@ -545,11 +583,12 @@ void UpdateFrog(void)
 
         Vector2 newBufferPos = Vector2Add(game.frog->seekPos, moveVector);
 
-        // set game.frog seek position
+        // set new seek position
         if (!game.frog->isMoving)
         {
             game.frog->isMoving = true;
             game.frog->seekPos = newSeekPos;
+            PlaySound(game.sounds.hop);
         }
 
         // set buffered position
@@ -565,7 +604,7 @@ void UpdateFrog(void)
         }
     }
 
-    // move game.frog towards next position
+    // move towards next position
     if (game.frog->isMoving)
     {
         Vector2 newPos = Vector2MoveTowards(game.frog->position, game.frog->seekPos, game.frog->speed*game.frameTime);
@@ -634,6 +673,7 @@ void UpdateHostile(Entity *hostile)
         CheckCollisionCircleRec(game.frog->position, game.frog->radius*0.75f, hostile->rec))
     {
         KillFrog();
+        PlaySound(game.sounds.hit);
     }
 }
 
@@ -677,18 +717,20 @@ void UpdateWinZone(Entity *zone, int entityIndex)
         zone->isWin = true;
         zone->flags |= ENTITY_FLAG_KILL;
         game.winCount--;
+        PlaySound(game.sounds.win);
         RespawnFrog();
     }
 
     if (zone->scoreTimer > EPSILON)
         zone->scoreTimer -= game.frameTime;
 
-    if (game.gameWon)
+    if (game.isGameWon)
     {
-        if (zone->animate.timer < EPSILON)
+        if (!zone->isDead && zone->animate.timer < EPSILON)
         {
+            zone->isDead = true;
             zone->textureOffset.x = zone->animate.offset.x;
-            game.winIndex++;
+            PlaySound(game.sounds.blink);
         }
         else zone->animate.timer -= game.frameTime;
     }
@@ -800,7 +842,7 @@ void DrawGameFrame(void)
         }
 
         // Frog
-        if ((e->type == ENTITY_TYPE_FROG) && !game.gameWon)
+        if ((e->type == ENTITY_TYPE_FROG) && !game.isGameWon)
         {
             float angle;
             if (e->isDead)
@@ -843,11 +885,11 @@ void DrawGameFrame(void)
     DrawRectangleV((Vector2){ game.gridStart.x, (game.gridStart.y + GRID_HEIGHT - GRID_UNIT) },
                    (Vector2){ GRID_WIDTH, (VIRTUAL_HEIGHT + GRID_UNIT - (game.gridStart.y + GRID_HEIGHT)) },
                    BG_COLOR);
-    Rectangle innerBorder = {
-        game.gridStart.x - GRID_UNIT/2, game.gridStart.y - GRID_UNIT/2,
-        GRID_WIDTH + GRID_UNIT, GRID_WIDTH + GRID_UNIT,
-    };
-    DrawRectangleLinesEx(innerBorder, GRID_UNIT/2, DARKGREEN);
+    // Rectangle outerBorder = {
+    //     game.gridStart.x - GRID_UNIT/2, game.gridStart.y - GRID_UNIT/2,
+    //     GRID_WIDTH + GRID_UNIT, GRID_WIDTH + GRID_UNIT,
+    // };
+    // DrawRectangleLinesEx(outerBorder, GRID_UNIT/2, BG_COLOR);
 
     if (ui.messageTimer > 0)
     {
@@ -924,6 +966,10 @@ void KillFrog(void)
     game.frog->textureOffset.x = 0;
     game.frog->textureOffset.y = game.frog->animate.offset.y; // default land death animation
     game.lives--;
+    if (game.frog->isDrowned)
+        PlaySound(game.sounds.sunk);
+    else
+        PlaySound(game.sounds.hit);
 }
 
 void RespawnFrog(void)
@@ -938,5 +984,11 @@ void RespawnFrog(void)
     game.frog->textureOffset.x = 0;
     game.prevFrogYPos = game.spawnPos.y;
     game.rowsTravelled = 0;
+}
+
+void StopGameSounds(void)
+{
+    StopSound(game.sounds.musicIntro);
+    StopMusicStream(game.sounds.musicLoop);
 }
 
