@@ -34,12 +34,12 @@ void InitScreenShader(void)
     viewport.vignetteLoc     = GetShaderLocation(viewport.shader, "vignette");
     viewport.ghostingLoc     = GetShaderLocation(viewport.shader, "ghosting");
     viewport.useFrameLoc     = GetShaderLocation(viewport.shader, "useFrame");
-    SetShaderValue(viewport.shader, viewport.curveLoc, (float[]){1.5f}, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(viewport.shader, viewport.wiggleToggleLoc, (float[]){0}, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(viewport.shader, viewport.scanrollLoc, (float[]){1.5f}, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(viewport.shader, viewport.vignetteLoc, (float[]){1.01f}, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(viewport.shader, viewport.ghostingLoc, (float[]){0.2f}, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(viewport.shader, viewport.useFrameLoc, (float[]){0}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.curveLoc,        (float[]){1.5f},  SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.wiggleToggleLoc, (float[]){0},     SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.scanrollLoc,     (float[]){1.5f},  SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.vignetteLoc,     (float[]){1.01f}, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.ghostingLoc,     (float[]){0.2f},  SHADER_UNIFORM_FLOAT);
+    SetShaderValue(viewport.shader, viewport.useFrameLoc,     (float[]){0},     SHADER_UNIFORM_FLOAT);
     viewport.shaderEnabled = true;
 }
 

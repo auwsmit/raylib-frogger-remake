@@ -97,6 +97,16 @@ void UpdateDrawFrame(void)
         CancelInputActions();
     }
 
+    if (IsKeyPressed(KEY_LEFT_BRACKET))
+    {
+        game.camera.zoom -= 0.01f;
+    }
+
+    if (IsKeyPressed(KEY_RIGHT_BRACKET))
+    {
+        game.camera.zoom += 0.01f;
+    }
+
     // Global updates
     game.isFullscreen = (IsWindowFullscreen() ||
                        IsWindowState(FLAG_BORDERLESS_WINDOWED_MODE));

@@ -5,24 +5,32 @@
 // Asset manager
 // - track assets in a list, and then free all assets in that list
 // ----------------------------------------------------------------------------
-Texture LoadTextureAsset(RaylibAssets *pool, char* fileName)
+Texture LoadTextureAssetEx(RaylibAssets *pool, char* fileName, TextureFilter filter)
 {
     Texture t = LoadTexture(fileName);
-    SetTextureFilter(t, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(t, filter);
     arrput(pool->textures, t);
     return t;
 }
 
-Sound LoadSoundAsset(RaylibAssets *pool, const char *fileName)
+Texture LoadTextureAsset(RaylibAssets *pool, char* fileName)
+{
+    TextureFilter defaultFilter = TEXTURE_FILTER_BILINEAR;
+    return LoadTextureAssetEx(pool, fileName, defaultFilter);
+}
+
+Sound LoadSoundAsset(RaylibAssets *pool, const char *fileName, float volume)
 {
     Sound s = LoadSound(fileName);
+    SetSoundVolume(s, volume);
     arrput(pool->sounds, s);
     return s;
 }
 
-Music LoadMusicAsset(RaylibAssets *pool, const char *fileName)
+Music LoadMusicAsset(RaylibAssets *pool, const char *fileName, float volume)
 {
     Music m = LoadMusicStream(fileName);
+    SetMusicVolume(m, volume);
     arrput(pool->music, m);
     return m;
 }

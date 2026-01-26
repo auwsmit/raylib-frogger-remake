@@ -77,7 +77,7 @@ void InitUiState(void)
     SetUiAlignMode(UI_ALIGN_DISABLED, UI_ALIGN_DISABLED);
 
     // Sound assets
-    ui.sounds.menu =  LoadSoundAsset(&ui.assets, "assets/audio/menu_beep.wav");
+    ui.sounds.menu =  LoadSoundAsset(&ui.assets, "assets/audio/menu_beep.wav", 1.0f);
 
     // Textures
     ui.textures.atlas       = LoadTextureAsset(&ui.assets, "assets/textures/controls.png");

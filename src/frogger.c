@@ -39,8 +39,7 @@ void InitGameState(void)
     game.gridStart = GetGridPosition(0, 0);
 
     // Load external assets
-    game.textures.atlas = LoadTextureAsset(&game.assets, "assets/textures/frogger.png");
-    SetTextureFilter(game.textures.atlas, TEXTURE_FILTER_POINT);
+    game.textures.atlas = LoadTextureAssetEx(&game.assets, "assets/textures/frogger.png", TEXTURE_FILTER_POINT);
     const float s = SPRITE_SIZE;
     game.textures.car         = (Rectangle){ s*3,    0,      s,   s      };
     game.textures.frog        = (Rectangle){ 0,      0,      s,   s      };
@@ -58,17 +57,13 @@ void InitGameState(void)
     game.textures.score       = (Rectangle){ s,      s*6,    s,   s      };
     game.textures.croc        = (Rectangle){ 0,      s*7,    s,   s      };
 
-    game.sounds.hop = LoadSoundAsset(&game.assets, "assets/audio/frog_hop.wav");
-    game.sounds.hit = LoadSoundAsset(&game.assets, "assets/audio/frog_hit.wav");
-    game.sounds.sunk = LoadSoundAsset(&game.assets, "assets/audio/frog_sunk.wav");
-    game.sounds.win = LoadSoundAsset(&game.assets, "assets/audio/frog_win.wav");
-    game.sounds.blink = LoadSoundAsset(&game.assets, "assets/audio/frog_blink.wav");
-    game.sounds.musicIntro = LoadSoundAsset(&game.assets, "assets/audio/music_intro.wav");
-    game.sounds.musicLoop = LoadMusicAsset(&game.assets, "assets/audio/music_loop.wav");
-    SetSoundVolume(game.sounds.hop, 0.5f);
-    SetSoundVolume(game.sounds.hit, 0.5f);
-    SetSoundVolume(game.sounds.musicIntro, 0.75f);
-    SetMusicVolume(game.sounds.musicLoop, 0.75f);
+    game.sounds.hop        = LoadSoundAsset(&game.assets, "assets/audio/frog_hop.wav",    0.6f);
+    game.sounds.hit        = LoadSoundAsset(&game.assets, "assets/audio/frog_hit.wav",    0.5f);
+    game.sounds.sunk       = LoadSoundAsset(&game.assets, "assets/audio/frog_sunk.wav",   0.6f);
+    game.sounds.win        = LoadSoundAsset(&game.assets, "assets/audio/frog_win.wav",    0.7f);
+    game.sounds.blink      = LoadSoundAsset(&game.assets, "assets/audio/frog_blink.wav",  0.7f);
+    game.sounds.musicIntro = LoadSoundAsset(&game.assets, "assets/audio/music_intro.wav", 0.5f);
+    game.sounds.musicLoop  = LoadMusicAsset(&game.assets, "assets/audio/music_loop.wav",  0.8f);
 
     game.font = LoadFont("assets/fonts/PressStart2P.ttf");
 
@@ -104,7 +99,7 @@ void InitGameState(void)
     frog.sprite = game.textures.frog;
     frog.textureOffset.x = SPRITE_SIZE*2;
     frog.type = ENTITY_TYPE_FROG;
-    frog.speed = BASE_SPEED*4.0f;
+    frog.speed = BASE_SPEED*5.0f;
     frog.radius = GRID_UNIT*0.4f;
     frog.color = GREEN;
     frog.animate.sprite = game.textures.dying;
@@ -292,24 +287,41 @@ void CreateNextLevel(void)
     CreateRow(ENTITY_TYPE_WALL,   spawnRow,   ".O_OO_OO_OO_OO_O.", 0);
     CreateRow(ENTITY_TYPE_WIN,    spawnRow,   "._O__O__O__O__O_.",  0);
 
-    // River (logs, turtles, etc)
-    // CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", speed*0.8f); // level 1
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "______.OOOO_.OOOO", speed*0.8f); // TEMP until level 2 layout
-    CreateRow(ENTITY_TYPE_CROC,     spawnRow, "__OOX_._____.____", speed*0.8f); // TEMP ^
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -speed);
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  speed*2);
-    // CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f); // level 1
-    CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO_______OOO",  speed*0.5f);
-    CreateRow(ENTITY_TYPE_CROC,     spawnRow, "________OOX_____",  speed*0.5f);
-    CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -speed);
+    if (game.level == 1)
+    {
+        // River
+        CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "_OOOO_.OOOO_.OOOO", speed*0.8f);
+        CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "___SS_.OO_.OO_.OO", -speed);
+        CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO__OOOOOO",  speed*2);
+        CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f);
+        CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_OOO_OOO_OOO",  -speed);
 
-    // Road, Cars
-    spawnRow = 9;
-    CreateRow(ENTITY_TYPE_CAR, spawnRow,   "________.OO___.OO", -speed);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "O_______________",  speed*0.6f);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  -speed*0.6f);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  speed*0.4f);
-    CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "______O___.O___.O", -speed*0.4f);
+        // Road, Cars
+        spawnRow = 9;
+        CreateRow(ENTITY_TYPE_CAR, spawnRow,   "________.OO___.OO", -speed);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "O_______________",  speed*0.6f);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  -speed*0.6f);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "_______O___O___O",  speed*0.4f);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "______O___.O___.O", -speed*0.4f);
+    }
+    else
+    {
+        // River
+        CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "______.OOOO_.OOOO", speed*0.8f);
+        CreateRow(ENTITY_TYPE_CROC,     spawnRow, "__OOX_._____.____", speed*0.8f);
+        CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "OO_SS_.OO_.OO_.OO", -speed);
+        CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "__OOOOOO________",  speed*2);
+        CreateRow(ENTITY_TYPE_LOG,    ++spawnRow, "___OOO__OOO__OOO",  speed*0.5f);
+        CreateRow(ENTITY_TYPE_TURTLE, ++spawnRow, "_FFF_____OOO_OOO",  -speed);
+
+        // Road, Cars
+        spawnRow = 9;
+        CreateRow(ENTITY_TYPE_CAR, spawnRow,   "___OO___.OO___.OO", -speed);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "O_.O____________",  speed*0.6f);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "___O___O___O___O",  -speed*0.6f);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "___O___O___O___O",  speed*0.4f);
+        CreateRow(ENTITY_TYPE_CAR, ++spawnRow, "__O___O___.O___.O", -speed*0.4f);
+    }
 
     arrpush(game.entities, frog);
     game.frog = &arrlast(game.entities);
@@ -405,7 +417,7 @@ void UpdateGameFrame(void)
             game.score = 0;
             game.lives = 4;
             CreateNextLevel();
-            // SetTimedMessage("GAME START", 3.0f, YELLOW);
+            SetTimedMessage("GAME START", 3.0f, YELLOW);
         }
 
         // Update entities
@@ -441,11 +453,14 @@ void UpdateGameFrame(void)
         }
         else
         {
-            if (game.fly.despawnTimer > EPSILON)
-                game.fly.despawnTimer -= game.frameTime;
-            else
+            if (game.fly.despawnTimer < EPSILON)
             {
                 game.fly.idx = 0;
+                game.fly.spawnTimer = GetRandomValue(3, 6);
+            }
+            else
+            {
+                game.fly.despawnTimer -= game.frameTime;
             }
         }
 
